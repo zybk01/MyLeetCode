@@ -1,4 +1,4 @@
-// leetcode.cpp : ¶¨Òå¿ØÖÆÌ¨Ó¦ÓÃ³ÌÐòµÄÈë¿Úµã¡£
+// leetcode.cpp : ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¨Ó¦ï¿½Ã³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµã¡£
 //
 
 //#include "stdafx.h"
@@ -10,7 +10,8 @@
 int main()
 {
 	Solution sol;
-	cout << sol.maxSubArray(vector<int>({ -2147483647 })) << endl;
+	vector<int> myVec({ 83647 });
+	cout << sol.maxSubArray(myVec) << endl;
 
 
 	cout << "Done!!!" << endl;
