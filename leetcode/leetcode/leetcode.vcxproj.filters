@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="源文件\isToeplitzMatrix">
+      <UniqueIdentifier>{003adc3f-3c6a-4f98-a31e-ab18a8a358bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\lastStoneWeightII">
+      <UniqueIdentifier>{01814640-2ea9-4f9d-9ec6-a2e6ed4fe66f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\canJump">
+      <UniqueIdentifier>{a1accd8c-a1ab-4e6d-9b8a-b0b4c1cd170c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\maxArea">
+      <UniqueIdentifier>{5f7705b9-b285-4fa0-bc9f-c7ccd9ae0152}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\isBipartite">
+      <UniqueIdentifier>{df3dc65d-daa6-4f75-9f69-715916e46ba2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\getMaxRepetitions">
+      <UniqueIdentifier>{a0d1733a-09b2-448a-b2e1-9c35ba6043ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\numIslands">
+      <UniqueIdentifier>{962192b6-73f7-493c-8c1f-53abc692d5c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\numberOfSubarrays">
+      <UniqueIdentifier>{4670a9d8-e847-4e7d-b54c-4bb284c97a7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\KMP">
+      <UniqueIdentifier>{c0b980ac-2bf0-4b53-89c4-3288410012fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\rightSideView">
+      <UniqueIdentifier>{90fc9a73-7ae5-4a5a-9a2f-486f28b1f64c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\solveSudoku">
+      <UniqueIdentifier>{21074a4e-e1ff-4ae0-9d76-4c3b36174a3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\waysToChange">
+      <UniqueIdentifier>{7bfb1e70-ce21-4afc-9d52-0de67e797029}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\reverssePairs">
+      <UniqueIdentifier>{d649fc76-2bf7-4d61-a74f-b579f37ea147}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\permute">
+      <UniqueIdentifier>{3c1b724a-84d4-4745-9b63-9f9e01dc6c97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\search">
+      <UniqueIdentifier>{9187c9e1-378a-4c13-9504-b37c8383ecfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\vivo_ScreenUnlockModes">
+      <UniqueIdentifier>{54327775-9e96-4862-a31e-e45effb79a61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\vivo_PhoneProductivity">
+      <UniqueIdentifier>{432796b3-e9f3-4d0d-bf25-f5a97696e1f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\vivo_DigitsMultiply">
+      <UniqueIdentifier>{2f64a2e7-a352-4500-b722-bd52e987ec87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\singleNumbers">
+      <UniqueIdentifier>{4549d744-ac4c-4e87-ac95-b50a51e34af7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\findInMountainArray">
+      <UniqueIdentifier>{b817c32e-a070-4d39-af17-139b3873a530}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\lengthOfLongestSubstring">
+      <UniqueIdentifier>{f82cf400-ccce-497c-8906-11e1d82f3270}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\maxSubArray">
+      <UniqueIdentifier>{ab6601d5-a2a0-4d46-84bf-391a811e5f34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\jump">
+      <UniqueIdentifier>{ec30f2c7-a012-4c93-9c24-01fbec26e65e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\isValidBST">
+      <UniqueIdentifier>{05ea8fe7-b9f6-4f69-b5e2-04de7a69ad62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\mincostTickets">
+      <UniqueIdentifier>{88fce8db-a80f-47e0-af90-efb6286263f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\isSubtree">
+      <UniqueIdentifier>{af8fa5c1-91fc-4d70-9ba9-f31186026717}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="leetcode.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="isToeplitzMatrix.cpp">
+      <Filter>源文件\isToeplitzMatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="lastStoneWeightII.cpp">
+      <Filter>源文件\lastStoneWeightII</Filter>
+    </ClCompile>
+    <ClCompile Include="canJump.cpp">
+      <Filter>源文件\canJump</Filter>
+    </ClCompile>
+    <ClCompile Include="maxArea.cpp">
+      <Filter>源文件\maxArea</Filter>
+    </ClCompile>
+    <ClCompile Include="isBipartite.cpp">
+      <Filter>源文件\isBipartite</Filter>
+    </ClCompile>
+    <ClCompile Include="getMaxRepetitions.cpp">
+      <Filter>源文件\getMaxRepetitions</Filter>
+    </ClCompile>
+    <ClCompile Include="getMaxRepetitions1.cpp">
+      <Filter>源文件\getMaxRepetitions</Filter>
+    </ClCompile>
+    <ClCompile Include="numIslands.cpp">
+      <Filter>源文件\numIslands</Filter>
+    </ClCompile>
+    <ClCompile Include="numberOfSubarrays.cpp">
+      <Filter>源文件\numberOfSubarrays</Filter>
+    </ClCompile>
+    <ClCompile Include="kmp.cpp">
+      <Filter>源文件\KMP</Filter>
+    </ClCompile>
+    <ClCompile Include="rightSideView.cpp">
+      <Filter>源文件\rightSideView</Filter>
+    </ClCompile>
+    <ClCompile Include="solveSudoku.cpp">
+      <Filter>源文件\solveSudoku</Filter>
+    </ClCompile>
+    <ClCompile Include="waysToChange.cpp">
+      <Filter>源文件\waysToChange</Filter>
+    </ClCompile>
+    <ClCompile Include="reversePairs.cpp">
+      <Filter>源文件\reverssePairs</Filter>
+    </ClCompile>
+    <ClCompile Include="permute.cpp">
+      <Filter>源文件\permute</Filter>
+    </ClCompile>
+    <ClCompile Include="search.cpp">
+      <Filter>源文件\search</Filter>
+    </ClCompile>
+    <ClCompile Include="screenUnlockModes.cpp">
+      <Filter>源文件\vivo_ScreenUnlockModes</Filter>
+    </ClCompile>
+    <ClCompile Include="phoneProductivity.cpp">
+      <Filter>源文件\vivo_PhoneProductivity</Filter>
+    </ClCompile>
+    <ClCompile Include="digitsMultiply.cpp">
+      <Filter>源文件\vivo_DigitsMultiply</Filter>
+    </ClCompile>
+    <ClCompile Include="singleNumbers.cpp">
+      <Filter>源文件\singleNumbers</Filter>
+    </ClCompile>
+    <ClCompile Include="findInMountainArray.cpp">
+      <Filter>源文件\findInMountainArray</Filter>
+    </ClCompile>
+    <ClCompile Include="lengthOfLongestSubstring.cpp">
+      <Filter>源文件\lengthOfLongestSubstring</Filter>
+    </ClCompile>
+    <ClCompile Include="maxSubArray.cpp">
+      <Filter>源文件\maxSubArray</Filter>
+    </ClCompile>
+    <ClCompile Include="jump.cpp">
+      <Filter>源文件\jump</Filter>
+    </ClCompile>
+    <ClCompile Include="isValidBST.cpp">
+      <Filter>源文件\isValidBST</Filter>
+    </ClCompile>
+    <ClCompile Include="mincostTickets.cpp">
+      <Filter>源文件\mincostTickets</Filter>
+    </ClCompile>
+    <ClCompile Include="isSubtree.cpp">
+      <Filter>源文件\isSubtree</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
