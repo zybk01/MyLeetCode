@@ -23,6 +23,8 @@
     "cmake.cmakePath": "C:\\Users\\zy113\\cmake-3.21.0-windows-x86_64\\cmake-3.21.0-windows-x86_64\\bin\\cmake.exe",
     "files.associations": {
         "algorithm": "cpp",
-        "unordered_map": "cpp"
-    }, // 格式化时调整include的顺序（按字母排序）
+        "unordered_map": "cpp",
+        "new": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "Enabled", // 格式化时调整include的顺序（按字母排序）
 }

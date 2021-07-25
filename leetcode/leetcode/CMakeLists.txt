@@ -3,6 +3,6 @@ project(LeetCode VERSION 0.1.0)
 
 
 add_executable(LeetCode leetcode.cpp)
-
+add_library(zybk.kmp  SHARED kmp.cpp)
 
 message(${PROJECT_SOURCE_DIR})

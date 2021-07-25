@@ -3,9 +3,12 @@
 #include<algorithm>
 #include<queue>
 #include<string>
+#include"solutionEntry.h"
 
-
+//#define SHARED_EXPORT __declspec(dllexport)
 using namespace std;
+
+struct Solution;
 
 
 class Solution {
@@ -54,6 +57,26 @@ public:
 		return prefix;
 	}
 };
+
+extern "C" __declspec(dllexport) void Entry(solutionEntry &entry);
+
+void create(pHandle& out){
+	out = reinterpret_cast<pHandle>(new Solution);
+}
+void solve(pHandle handle,pData dataptr,void *out){
+	Solution* pSolution=reinterpret_cast<Solution*>(handle);
+	int result= pSolution->kmp(*(reinterpret_cast<string*>(dataptr[0])),*(reinterpret_cast<string*>(dataptr[1])));
+	*reinterpret_cast<int*>(out) = result;
+}
+void destroy(pHandle handle){
+	delete reinterpret_cast<Solution*>(handle);
+}
+
+void Entry(solutionEntry &entry){
+	entry.create = create;
+	entry.solve = solve;
+	entry.destroy = destroy;
+}
 
 
 //
