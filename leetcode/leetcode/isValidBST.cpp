@@ -18,7 +18,7 @@ struct TreeNode {
 class Solution {
 public:
 	bool isValidBST(TreeNode* root) {
-		return verify(root,0x7fffffff,-0x7ffffffff);
+		return verify(root,0x7fffffff,-0x7fffffff);
 	}
 	bool verify(TreeNode* root,int L,int S) {
 		if (root==NULL)

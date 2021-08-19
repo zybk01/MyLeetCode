@@ -24,7 +24,9 @@
     "files.associations": {
         "algorithm": "cpp",
         "unordered_map": "cpp",
-        "new": "cpp"
+        "new": "cpp",
+        "iostream": "cpp",
+        "vector": "cpp"
     },
     "C_Cpp.errorSquiggles": "Enabled", // 格式化时调整include的顺序（按字母排序）
 }

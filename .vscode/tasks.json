@@ -6,7 +6,8 @@
 			"label": "C/C++: g++.exe 生成活动文件",
 			"command": "g++",
 			"args": [
-				"${fileDirname}/../codinginVIVOTime/Untitled-1.cpp",
+				//"${fileDirname}/../codinginVIVOTime/Untitled-1.cpp",
+				"${fileDirname}/${fileBasenameNoExtension}.cpp",
             	"-o",    // 指定输出文件名，不加该参数则默认输出a.exe，Linux下默认a.out
             	"${fileDirname}/${fileBasenameNoExtension}.exe",
             	"-g",    // 生成和调试有关的信息

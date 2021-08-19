@@ -1,0 +1,1 @@
+set(BUILD_LEETCODE 1)
