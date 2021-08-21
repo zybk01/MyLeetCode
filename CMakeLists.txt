@@ -9,11 +9,11 @@ set(LIBRARY_OUTPUT_PATH ${OUTPATH})
 set(EXECUTABLE_OUTPUT_PATH ${OUTPATH})
 
 include_directories(./leetcode/leetcode)
-
+add_subdirectory(./config)
 add_executable(VSCode main.cpp )
 add_subdirectory(./codingInVIVOTime)
 add_subdirectory(./leetcode/leetcode)
-add_subdirectory(./config)
+
 
 target_link_libraries(VSCode test11)
 

@@ -2,6 +2,7 @@
 #include<vector>
 #include<algorithm>
 #include<queue>
+#include<iostream>
 #include<string>
 #include"solutionEntry.h"
 
@@ -58,24 +59,37 @@ public:
 	}
 };
 
-extern "C" __declspec(dllexport) void Entry(solutionEntry &entry);
+extern "C" __declspec(dllexport) void Entry(solutionEntryBase *entry);
 
 void create(pHandle& out){
+	cout << __FILE__ << ": created!" << endl;
 	out = reinterpret_cast<pHandle>(new Solution);
 }
-void solve(pHandle handle,pData dataptr,void *out){
+// void solve(pHandle handle,pData dataptr,void *out){
+// 	Solution* pSolution=reinterpret_cast<Solution*>(handle);
+// 	int result= pSolution->kmp(*(reinterpret_cast<string*>(dataptr[0])),*(reinterpret_cast<string*>(dataptr[1])));
+// 	*reinterpret_cast<int*>(out) = result;
+// }
+void solve(pHandle handle,string& str1,string& str2 ,int& out){
+	cout << __FILE__ << ": solving!" << endl;
+	cout << __FILE__ <<" str1  ="<<str1<<" str2  ="<< str2<<endl;
 	Solution* pSolution=reinterpret_cast<Solution*>(handle);
-	int result= pSolution->kmp(*(reinterpret_cast<string*>(dataptr[0])),*(reinterpret_cast<string*>(dataptr[1])));
-	*reinterpret_cast<int*>(out) = result;
+	int result= pSolution->kmp(str1,str2);
+	cout << __FILE__ << ": result = " <<result<< endl;
+	out = result;
+	return;
 }
 void destroy(pHandle handle){
+	cout << __FILE__ << ": destroyed!" << endl;
 	delete reinterpret_cast<Solution*>(handle);
 }
 
-void Entry(solutionEntry &entry){
-	entry.create = create;
-	entry.solve = solve;
-	entry.destroy = destroy;
+void Entry(solutionEntryBase *entry){
+	cout << __FILE__ << " get entry!" << endl;
+	entry->create = create;
+	entry->solve = reinterpret_cast<void*>(solve);
+	// entry->solve = solve;
+	entry->destroy = destroy;
 }
 
 
