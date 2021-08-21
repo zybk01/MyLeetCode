@@ -1,4 +1,4 @@
-#include"stdafx.h"
+#include"zybkLog.h"
 #include<vector>
 #include<algorithm>
 #include<queue>
@@ -62,7 +62,7 @@ public:
 extern "C" __declspec(dllexport) void Entry(solutionEntryBase *entry);
 
 void create(pHandle& out){
-	cout << __FILE__ << ": created!" << endl;
+	LOGD("Created!");
 	out = reinterpret_cast<pHandle>(new Solution);
 }
 // void solve(pHandle handle,pData dataptr,void *out){
@@ -71,21 +71,26 @@ void create(pHandle& out){
 // 	*reinterpret_cast<int*>(out) = result;
 // }
 void solve(pHandle handle,string& str1,string& str2 ,int& out){
-	cout << __FILE__ << ": solving!" << endl;
-	cout << __FILE__ <<" str1  ="<<str1<<" str2  ="<< str2<<endl;
+	LOGD("Solving!");
+	LOGD("str1=%s, str2=%s !",str1.c_str(),str2.c_str());
+	// cout << __FILE__ <<": "<<__func__<< ": solving!" << endl;
+	// cout << __FILE__ <<": "<<__func__<<" str1="<<str1<<" str2="<< str2<<endl;
 	Solution* pSolution=reinterpret_cast<Solution*>(handle);
 	int result= pSolution->kmp(str1,str2);
-	cout << __FILE__ << ": result = " <<result<< endl;
+	// cout << __FILE__ << ": "<<__func__<<": result = " <<result<< endl;
+	LOGD("Result= %d !",result);
 	out = result;
 	return;
 }
 void destroy(pHandle handle){
-	cout << __FILE__ << ": destroyed!" << endl;
+	LOGD("Destroyed!");
+	// cout << __FILE__ << ": "<<__func__<<": destroyed!" << endl;
 	delete reinterpret_cast<Solution*>(handle);
 }
 
 void Entry(solutionEntryBase *entry){
-	cout << __FILE__ << " get entry!" << endl;
+	LOGD("Get Entry!");
+	// cout << __FILE__ << ": "<<__func__<<" get entry!"<< endl;
 	entry->create = create;
 	entry->solve = reinterpret_cast<void*>(solve);
 	// entry->solve = solve;
