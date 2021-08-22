@@ -48,11 +48,15 @@ public:
         //using return_type=typename std::result_of<F(Args...)>::type;
         using mtype = decltype(func(args...));
         auto lock = std::unique_lock<std::mutex>(mThreadLock);
+        
         auto mTask = std::make_shared<std::packaged_task<mtype()>>(std::bind(std::forward<F>(func), std::forward<Args>(args)...));
+        auto ret=mTask->get_future();
+        
         mTaskQueue.push({[mTask]()
                          { (*mTask)(); }});
         mCond.notify_one();
-        return mTask->get_future();
+        // LOGD("Posted!");
+        return ret;
     }
     // template <typename F>
     // auto PostJob(F&& func) -> std::future<typename std::result_of<F()>::type>
@@ -73,6 +77,7 @@ protected:
         // std::cout << __FILE__ << ": " << __func__ << " Threads number = " << num << std::endl;
         mNumThreads = num;
         isRunning = true;
+        //mTaskQueue.
         for (int i = 0; i < num; i++)
         {
             mThreads.push_back(std::thread(threadLoop, this));
@@ -86,6 +91,7 @@ protected:
         while (isRunning)
         {
             ThreadTask task;
+            bool valid = false;
             {
                 auto lock = std::unique_lock<std::mutex>(mThreadLock);
                 if (isRunning && mTaskQueue.empty())
@@ -96,11 +102,18 @@ protected:
                 {
                     task = mTaskQueue.front();
                     mTaskQueue.pop();
+                    valid = true;
                 }
             }
-            if (isRunning)
+            if (isRunning&&valid)
             {
-                task.func();
+                try{
+                    task.func();
+                }catch(exception e){
+                    LOGD(e.what());
+                }
+                
+                // LOGD("working!");
             }
         }
     }

@@ -13,13 +13,10 @@ typedef void **pData;
 template <typename... Args>
 void (*Solve)(pHandle handle, Args &...args);
 
+struct solutionEntryBase;
 typedef void (*solvefunc)(pHandle, std::string &, std::string &, int &);
+typedef void (*EntryFunc)(solutionEntryBase *entry);
 
-void sss(...)
-{
-
-    return;
-}
 struct solutionEntryBase
 {
     /* data */
@@ -52,7 +49,7 @@ struct solutionEntry : solutionEntryBase
     }
 };
 
-typedef void (*EntryFunc)(solutionEntryBase *entry);
+
 
 // struct solutionEntry;
 
