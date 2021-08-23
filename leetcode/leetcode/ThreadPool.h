@@ -24,6 +24,11 @@ struct ThreadTask
 class ThreadPool
 {
 public:
+    /**
+       *  @brief  deconstructor to clean up threads.
+       *  when all threads finished, mostly they are in wait() state
+       *  call this to notify them.
+       */
     ~ThreadPool()
     {
         LOGD(__func__);
@@ -35,7 +40,13 @@ public:
             mThreads[i].join();
         }
     }
-
+    /**
+       *  @brief  tell ThreadPool current process is going down.
+       *  call future.get() to block main function until all tasks finished.
+       *  take care to stop loop tasks before you call this function
+       *  otherwise main process will block,in that case we recommend
+       *  you exit main without calling this function
+       */
     auto checkOut()
     {
         {
@@ -47,7 +58,7 @@ public:
                 // cout << "future set!!!" << endl;
             }
         }
-    //    / cout << "checkout!!!" << endl;
+        //    / cout << "checkout!!!" << endl;
         return busy.get_future();
     }
     static ThreadPool *GetInstance()
@@ -122,7 +133,7 @@ protected:
             bool valid = false;
             {
                 auto lock = std::unique_lock<std::mutex>(mThreadLock);
-                if (isRunning && mTaskQueue[threadId].empty())
+                if (mTaskQueue[threadId].empty())
                 {
                     // cout << "wait!!! : " << threadId << endl;
 
@@ -147,7 +158,7 @@ protected:
                 try
                 {
                     task.func();
-                   if (threadId != 9)
+                    if (threadId != 9)
                     {
                         LOGD("taskName: %s , threadId= %d !", task.taskName.c_str(), task.threadId);
                     }
@@ -172,7 +183,7 @@ protected:
                 // cout << "remine!! : " <<std::hex<<jobRemine<< endl;
                 if (!isRunning && jobRemine == 0)
                 {
-                    
+
                     // cout << "set!! : " <<threadId<< endl;
                     busy.set_value(false);
                     break;
