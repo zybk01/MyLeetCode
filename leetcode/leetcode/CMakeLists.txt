@@ -6,6 +6,12 @@ message("Enter Path: " ${PROJECT_SOURCE_DIR})
 set(LIBRARY_OUTPUT_PATH ${OUTPATH})
 set(EXECUTABLE_OUTPUT_PATH ${OUTPATH})
 
+if(${BUILD_LOG})
+add_library(zybk.log  SHARED zybkLog.cpp)
+endif(${BUILD_LOG})
+
+link_libraries(zybk.log)
+
 if(${BUILD_LEETCODE})
    
     #set(LIBRARY_OUTPUT_DIRECTORY ${OUTPATH})
@@ -26,6 +32,10 @@ endif(${BUILD_THREADPOOL})
 if(${BUILD_ALGORITHMFACTORY})
 # add_library(zybk.algorithmfactory  SHARED algorithmFactory.h)
 endif(${BUILD_ALGORITHMFACTORY})
+
+
+
+
 
 if(${BUILD_ALGO_ISBIPARTITE})
 add_library(zybk.isbipartite  SHARED isBipartite.cpp)

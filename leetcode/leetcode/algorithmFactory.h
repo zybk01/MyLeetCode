@@ -41,7 +41,7 @@ protected:
         {
             return -1;
         }
-        LOGD(" open library, Path= %s",libname);
+        LOGD(" open library, Path= %s",libname.c_str());
         mEntry = reinterpret_cast<EntryFunc>(GetProcAddress(libHandle, "Entry"));
         if (mEntry == NULL)
         {
@@ -89,7 +89,7 @@ public:
 
     int getEntry(string libname, solutionEntryBase *entry)
     {
-        LOGD(" get library entry, Algo= %s",libname);
+        LOGD(" get library entry, Algo= %s",libname.c_str());
         int ret = 0;
         if (libname.compare("kmp") == 0)
         {

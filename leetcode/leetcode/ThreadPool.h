@@ -8,6 +8,7 @@
 #include <iostream>
 #include <mutex>
 #include <queue>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -15,7 +16,8 @@
 
 struct ThreadTask
 {
-
+    int threadId;
+    string taskName;
     std::function<void()> func;
 };
 
@@ -26,35 +28,59 @@ public:
     {
         LOGD(__func__);
         // std::cout << __FILE__ << ": " << __func__ << std::endl;
-        {
-            auto lock = std::unique_lock<std::mutex>(mThreadLock);
-            isRunning = false;
-        }
-        mCond.notify_all();
 
         for (int i = 0; i < mNumThreads; i++)
         {
+            mCond[i].notify_all();
             mThreads[i].join();
         }
+    }
+
+    auto checkOut()
+    {
+        {
+            auto lock = std::unique_lock<std::mutex>(mThreadLock);
+            isRunning = false;
+            if (jobRemine == 0)
+            {
+                busy.set_value(false);
+                // cout << "future set!!!" << endl;
+            }
+        }
+    //    / cout << "checkout!!!" << endl;
+        return busy.get_future();
     }
     static ThreadPool *GetInstance()
     {
         static ThreadPool *mThreadPool = new ThreadPool(MAX_THREADS);
         return mThreadPool;
     }
+
+    /**
+       *  @brief  Post a task to ThreadPool.
+       *  @param  func  a function pointer to be called
+       *  @param  taskName  a string to identify task
+       *  @param  threadId  should be -1 by default,set this Id to dispatch task to certain thread
+       *  @param  args...  func input params
+       *  This function will %post the %func to the specified
+       *  thread if assigned.  If the %threadId is bigger than the
+       *  threadPool's current thread num, the %threadId is set to 0.
+       */
     template <typename F, class... Args>
-    auto PostJob(F &&func, Args &&...args) -> std::future<decltype(func(args...))>
+    auto PostJob(F &&func, string taskName, int threadId, Args &&...args) -> std::future<decltype(func(args...))>
     {
         //using return_type=typename std::result_of<F(Args...)>::type;
         using mtype = decltype(func(args...));
         auto lock = std::unique_lock<std::mutex>(mThreadLock);
-        
+
         auto mTask = std::make_shared<std::packaged_task<mtype()>>(std::bind(std::forward<F>(func), std::forward<Args>(args)...));
-        auto ret=mTask->get_future();
-        
-        mTaskQueue.push({[mTask]()
-                         { (*mTask)(); }});
-        mCond.notify_one();
+        auto ret = mTask->get_future();
+        threadId = threadId < 0 ? 0 : threadId;
+
+        mTaskQueue[threadId].push({threadId >= mNumThreads ? 0 : threadId, taskName, {[mTask]()
+                                                                                      { (*mTask)(); }}});
+        jobRemine |= 0x1 << threadId;
+        mCond[threadId].notify_all();
         // LOGD("Posted!");
         return ret;
     }
@@ -73,58 +99,97 @@ public:
 protected:
     ThreadPool(int num)
     {
-        LOGD("Starting Threads, Threads number =%d", num);
+        // LOGD("Starting Threads, Threads number =%d", num);
         // std::cout << __FILE__ << ": " << __func__ << " Threads number = " << num << std::endl;
         mNumThreads = num;
         isRunning = true;
+        mTaskQueue.resize(mNumThreads);
+        jobRemine = 0;
         //mTaskQueue.
-        for (int i = 0; i < num; i++)
+        for (int i = 0; i < mNumThreads; i++)
         {
-            mThreads.push_back(std::thread(threadLoop, this));
+            mThreads.push_back(std::thread(threadLoop, this, i));
         }
     }
     ThreadPool(const ThreadPool &) = delete;
     ThreadPool operator=(const ThreadPool &) = delete;
 
-    void threadLoop()
+    void threadLoop(int threadId)
     {
-        while (isRunning)
+        while (1)
         {
             ThreadTask task;
             bool valid = false;
             {
                 auto lock = std::unique_lock<std::mutex>(mThreadLock);
-                if (isRunning && mTaskQueue.empty())
+                if (isRunning && mTaskQueue[threadId].empty())
                 {
-                    mCond.wait(lock);
+                    // cout << "wait!!! : " << threadId << endl;
+
+                    mCond[threadId].wait(lock);
+                    // cout << "wake!!! : " << threadId << endl;
                 }
-                if (!mTaskQueue.empty())
+
+                if (!mTaskQueue[threadId].empty())
                 {
-                    task = mTaskQueue.front();
-                    mTaskQueue.pop();
+                    task = mTaskQueue[threadId].front();
+                    mTaskQueue[threadId].pop();
                     valid = true;
+
+                    // if (!isRunning && jobRemine == 0)
+                    // {
+                    //     busy.set_value(false);
+                    // }
                 }
             }
-            if (isRunning&&valid)
+            if (valid)
             {
-                try{
+                try
+                {
                     task.func();
-                }catch(exception e){
-                    LOGD(e.what());
+                   if (threadId != 9)
+                    {
+                        LOGD("taskName: %s , threadId= %d !", task.taskName.c_str(), task.threadId);
+                    }
                 }
-                
-                // LOGD("working!");
+                catch (exception e)
+                {
+                    std::cout << __DATE__ << __TIME__ << RMPATHr(RMPATH(__FILE__)) << ": " << __func__ << " taskName:" << task.taskName.c_str() << " ERROR= " << e.what() << std::endl;
+                }
+            }
+            {
+                auto lock = std::unique_lock<std::mutex>(mThreadLock);
+                if (!mTaskQueue[threadId].empty())
+                {
+                    // jobRemine[threadId] = true;
+                    jobRemine |= 0x1 << threadId;
+                }
+                else
+                {
+                    // jobRemine[threadId] = false;
+                    jobRemine &= ~(0x1 << threadId);
+                }
+                // cout << "remine!! : " <<std::hex<<jobRemine<< endl;
+                if (!isRunning && jobRemine == 0)
+                {
+                    
+                    // cout << "set!! : " <<threadId<< endl;
+                    busy.set_value(false);
+                    break;
+                }
             }
         }
     }
 
 private:
     std::vector<std::thread> mThreads;
-    std::queue<ThreadTask> mTaskQueue;
+    std::vector<std::queue<ThreadTask>> mTaskQueue;
+    std::condition_variable mCond[MAX_THREADS];
     std::mutex mThreadLock;
-    std::condition_variable mCond;
     bool isRunning;
+    int jobRemine;
     int mNumThreads;
+    promise<bool> busy;
 };
 
 #endif
