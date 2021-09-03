@@ -6,10 +6,13 @@
 #include <Windows.h>
 #include <deque>
 #include <iostream>
-#include <libloaderapi.h>
+// #include <libloaderapi.h>
+#include <Windows.h>
 #include"ThreadPool.h"
 #include<iomanip>
 #include"zybkLog.h"
+
+
 
 int main()
 {
@@ -22,7 +25,7 @@ int main()
 	int result;
 	vector<int> myVec({83647});
 	cout << sol.maxSubArray(myVec) << endl;
-	HMODULE libHandle = LoadLibrary("C:/Users/zy113/vsProjects/libzybk.kmp.dll");
+	HMODULE libHandle = LoadLibrary("C:/Users/zy113/vsProjects/libs/libzybk.kmp.dll");
 	mEntry = reinterpret_cast<EntryFunc>(GetProcAddress(libHandle, "Entry"));
 	mEntry(&mSolution);
 	mSolution.create(mHandle);

@@ -3,7 +3,7 @@ project(LeetCode VERSION 0.1.0)
 
 message("Enter Path: " ${PROJECT_SOURCE_DIR})
 
-set(LIBRARY_OUTPUT_PATH ${OUTPATH})
+set(LIBRARY_OUTPUT_PATH ${OUTPATH}/libs)
 set(EXECUTABLE_OUTPUT_PATH ${OUTPATH})
 
 if(${BUILD_LOG})
@@ -16,7 +16,7 @@ if(${BUILD_LEETCODE})
    
     #set(LIBRARY_OUTPUT_DIRECTORY ${OUTPATH})
     add_executable(LeetCode leetcode.cpp)
-
+   # target_link_libraries(VSCode test11)
     message("BUILDING_LEETCODE_DONE: "${BUILD_LEETCODE})
 endif()
 

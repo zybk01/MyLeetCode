@@ -3,11 +3,48 @@
 #include "kmp.h"
 #include "solutionEntry.h"
 #include "test.h"
+// #include <minwindef.h>
+// #include <dbghelp.h>
+// #include <excpt.h>
+#include <fstream>
 #include <iostream>
 #include <thread>
+#include <windows.h>
+// #include<debugapi.h>
+
+LONG WINAPI MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *ExceptionInfo)
+{
+    // HANDLE lhDumpFile = CreateFile(("DumpFile.dmp"), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL ,NULL);
+
+    // MINIDUMP_EXCEPTION_INFORMATION loExceptionInfo;
+    // loExceptionInfo.ExceptionPointers = ExceptionInfo;
+    // loExceptionInfo.ThreadId = GetCurrentThreadId();
+    // loExceptionInfo.ClientPointers = TRUE;
+    // MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),lhDumpFile, MiniDumpNormal, &loExceptionInfo, NULL, NULL);
+
+    // CloseHandle(lhDumpFile);
+    // std::fstream fs;
+    // fs.open("C:\\Users\\zy113\\vsProjects\\test.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+    TraceManager::GetInstance()->dumpTrace();
+    LOGD("ERROR!!!!!");
+
+    return EXCEPTION_EXECUTE_HANDLER;
+}
 
 int main(int, char **)
 {
+
+    SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
+    ZYBK_TRACE();
+    // TraceWrapper(string(__DATE__) + string(__TIME__) + string(RMPATHr(RMPATH(__FILE__))) + string(__func__) + to_string(__LINE__));
+    // char a[5];
+    // char b = a[6];
+    // vector<int> d(3);
+    // int f = d[7];
+    // cout << f << endl;
+    // int *g = nullptr;
+    // *g = 1;
+    // float c = 1 / 0;
     // Derive D;
     // Base B;
     // // D.func1();
@@ -41,7 +78,16 @@ int main(int, char **)
     // LOGD("try");
     auto mFuture = ThreadPool::GetInstance()->PostJob([]()
                                                       {
+                                                          ZYBK_TRACE();
                                                           LOGD("try");
+                                                          char a[5];
+                                                          char b = a[6];
+                                                          vector<int> d(3);
+                                                          int f = d[7];
+                                                          cout << f << endl;
+                                                          int *g = nullptr;
+                                                          *g = 1;
+
                                                           return;
                                                       },
                                                       "testTask", 9);
@@ -54,6 +100,7 @@ int main(int, char **)
     if (mFuture.valid())
     {
         mFuture.get();
+        // mFuture.get();
         // std::cout << "no args threadTask" << std::endl;
     }
     if (mFuture1.valid())

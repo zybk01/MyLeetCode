@@ -80,6 +80,7 @@ public:
     template <typename F, class... Args>
     auto PostJob(F &&func, string taskName, int threadId, Args &&...args) -> std::future<decltype(func(args...))>
     {
+        ZYBK_TRACE();
         //using return_type=typename std::result_of<F(Args...)>::type;
         using mtype = decltype(func(args...));
         auto lock = std::unique_lock<std::mutex>(mThreadLock);
