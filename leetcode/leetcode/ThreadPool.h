@@ -2,6 +2,7 @@
 #define _THREADPOOL_H_
 
 #include "zybkLog.h"
+#include "zybkTrace.h"
 #include <condition_variable>
 #include <functional>
 #include <future>
@@ -11,7 +12,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-
 #define MAX_THREADS 15
 
 struct ThreadTask
@@ -69,7 +69,7 @@ public:
 
     /**
        *  @brief  Post a task to ThreadPool.
-       *  @param  func  a function pointer to be called
+       *  @param  func  a function pointer to be called,and due to current implementation,this function must not contain rvalue refrence imput params.
        *  @param  taskName  a string to identify task
        *  @param  threadId  should be -1 by default,set this Id to dispatch task to certain thread
        *  @param  args...  func input params
@@ -78,17 +78,23 @@ public:
        *  threadPool's current thread num, the %threadId is set to 0.
        */
     template <typename F, class... Args>
-    auto PostJob(F &&func, string taskName, int threadId, Args &&...args) -> std::future<decltype(func(args...))>
+    auto PostJob(F &&func, string taskName, int threadId, Args &&...args) 
+    -> std::future<decltype(forward<F>(func)(forward<Args>(args)...))>
     {
-        ZYBK_TRACE();
+       
         //using return_type=typename std::result_of<F(Args...)>::type;
-        using mtype = decltype(func(args...));
+        // using mtype = typename std::result_of<F&(Args &&...)>::type;
+        // using mtype1= decltype(forward<F>(func)(forward<Args>(args)...));
+        // auto lock = std::unique_lock<std::mutex>(mThreadLock);
+        // auto mbind=bind(std::forward<F>(func), std::forward<Args>(args)...);
+        // auto mTask = std::make_shared<std::packaged_task<mtype1()>>(ref(mbind));
+        using mtype = typename std::result_of<F&(Args &&...)>::type;
+        // using mtype1= decltype(forward<F>(func)(forward<Args>(args)...));
         auto lock = std::unique_lock<std::mutex>(mThreadLock);
-
-        auto mTask = std::make_shared<std::packaged_task<mtype()>>(std::bind(std::forward<F>(func), std::forward<Args>(args)...));
+        auto mTask = std::make_shared<std::packaged_task<mtype()>>(bind(std::forward<F>(func), std::forward<Args>(args)...));
+        
         auto ret = mTask->get_future();
         threadId = threadId < 0 ? 0 : threadId;
-
         mTaskQueue[threadId].push({threadId >= mNumThreads ? 0 : threadId, taskName, {[mTask]()
                                                                                       { (*mTask)(); }}});
         jobRemine |= 0x1 << threadId;

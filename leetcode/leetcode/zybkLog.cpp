@@ -1,6 +1,6 @@
 #include "zybkLog.h"
 #include "ThreadPool.h"
-
+#include "zybkTrace.h"
 
 LogManager *LogManager::GetInstance()
 {
