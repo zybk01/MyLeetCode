@@ -23,7 +23,7 @@ add_subdirectory(./config)
 
 add_subdirectory(./leetcode/leetcode)
 
-link_libraries(zybk.log)
+link_libraries(zybk.util)
 
 add_executable(VSCode main.cpp )
 

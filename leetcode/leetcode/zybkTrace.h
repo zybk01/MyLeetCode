@@ -1,30 +1,39 @@
 #ifndef _ZYBKTRACE_H_
 #define _ZYBKTRACE_H_
 
-#include "ThreadPool.h"
+// #include "ThreadPool.h"
 #include <fstream>
 #include <map>
+#include <mutex>
 #include <stack>
-#include <string.h>
+// #include <string.h>
+#include <ctime>
 #include <string>
+#include <windows.h>
 
+using namespace std;
 // class __declspec(dllexport) TraceManager;
 class __declspec(dllexport) TraceWrapper;
 
-#define ZYBK_TRACE()                                                                                                                \
-    char *message = new char[1000];                                                                                                 \
-    int i = 0;                                                                                                                      \
-    *message = '\0';                                                                                                                \
-    i += sprintf(message + i, "%-12s%-10s%-20s:%-20s:%-10d:  threadId:%d", __DATE__, __TIME__, RMPATHr(RMPATH(__FILE__)), __func__, __LINE__,(unsigned int)GetCurrentThreadId()); \
-    TraceWrapper zybkTraceHELPPER(message);                                                                                         \
-    do                                                                                                                              \
-    {                                                                                                                               \
-        delete[] message;                                                                                                           \
+#define ZYBK_TRACE()                                                                                             \
+    char *ZYBKTRACE_message = new char[1000];                                                                    \
+    int ZYBKTRACE_i = 0;                                                                                         \
+    time_t ZYBKTRACE_time = time(nullptr);                                                                       \
+    *ZYBKTRACE_message = '\0';                                                                                   \
+    ZYBKTRACE_i += sprintf(ZYBKTRACE_message + ZYBKTRACE_i, "%-22ld%-20s:%-20s:%-10d  processId:%d  threadId:%d", \
+                           ZYBKTRACE_time, RMPATHr(RMPATH(__FILE__)), __func__, __LINE__,                \
+                           (unsigned int)GetCurrentProcessId(), (unsigned int)GetCurrentThreadId());             \
+    TraceWrapper zybkTraceHELPPER(ZYBKTRACE_message);                                                            \
+    do                                                                                                           \
+    {                                                                                                            \
+        delete[] ZYBKTRACE_message;                                                                              \
     } while (0)
 
 class TraceManager
 {
-    stack<string> mTraceStack;
+    static TraceManager *mTraceManager;
+    static mutex mLock;
+    //stack<string> mTraceStack;
     map<int, stack<string>> mStackMap;
 
 protected:
@@ -85,6 +94,10 @@ public:
         fs.close();
     }
 };
+
+#define ZYBK_TRACE_DUMP() dumpTrace()
+
+void __declspec(dllexport) dumpTrace();
 
 class __declspec(dllexport) TraceWrapper
 {

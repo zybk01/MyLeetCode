@@ -7,10 +7,10 @@ set(LIBRARY_OUTPUT_PATH ${OUTPATH}/libs)
 set(EXECUTABLE_OUTPUT_PATH ${OUTPATH})
 
 if(${BUILD_LOG})
-add_library(zybk.log  SHARED zybkLog.cpp zybkTrace.cpp)
+add_library(zybk.util  SHARED zybkLog.cpp zybkTrace.cpp ThreadPool.cpp)
 endif(${BUILD_LOG})
 
-link_libraries(zybk.log)
+link_libraries(zybk.util)
 
 if(${BUILD_LEETCODE})
    

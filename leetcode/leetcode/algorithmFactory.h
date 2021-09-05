@@ -5,7 +5,7 @@
 #include "solutionEntry.h"
 #include <Windows.h>
 #include <iostream>
-
+#include"zybkTrace.h"
 #include <map>
 #include <mutex>
 #include <string>
@@ -26,6 +26,7 @@ protected:
     AlgorithmFactory operator=(const AlgorithmFactory &);
     int openAlgoLib(string libname)
     {
+        ZYBK_TRACE();
         auto lock = unique_lock<mutex>(mOpenLock);
         {
             auto lock = unique_lock<mutex>(mGetLock);
@@ -57,6 +58,7 @@ protected:
     }
     int mGetEntry(string libname, solutionEntryBase *entry)
     {
+        ZYBK_TRACE();
         {
             auto lock = unique_lock<mutex>(mGetLock);
             if (mAlgoMap.count(libname) > 0)
@@ -89,6 +91,7 @@ public:
 
     int getEntry(string libname, solutionEntryBase *entry)
     {
+        ZYBK_TRACE();
         LOGD("get library entry, Algo= %s",libname.c_str());
         int ret = 0;
         if (libname.compare("kmp") == 0)
@@ -103,6 +106,7 @@ public:
     }
     ~AlgorithmFactory()
     {
+        ZYBK_TRACE();
         LOGD(" ");
         auto lock = unique_lock<mutex>(mGetLock);
         for (auto itr : mAlgoMap)

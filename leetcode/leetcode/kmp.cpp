@@ -1,6 +1,7 @@
 #include "kmp.h"
 #include "solutionEntry.h"
 #include "zybkLog.h"
+#include"zybkTrace.h"
 #include <algorithm>
 #include <iostream>
 #include <queue>
@@ -12,6 +13,7 @@ using namespace std;
 
 int SolutionKMP::kmp(string &T, string &P)
 {
+	ZYBK_TRACE();
 	int m = T.length();
 	int n = P.length();
 	vector<int> prefix = computePrefix(P);
@@ -37,6 +39,7 @@ int SolutionKMP::kmp(string &T, string &P)
 }
 vector<int> SolutionKMP::computePrefix(string &P)
 {
+	ZYBK_TRACE();
 	int len = P.length();
 	vector<int> prefix;
 	prefix.push_back(0);
@@ -61,6 +64,7 @@ extern "C" __declspec(dllexport) void Entry(solutionEntryBase *entry);
 
 void create(pHandle &out)
 {
+	ZYBK_TRACE();
 	LOGD("Created!");
 	out = reinterpret_cast<pHandle>(new SolutionKMP);
 }
@@ -71,6 +75,7 @@ void create(pHandle &out)
 // }
 void solve(pHandle handle, string &str1, string &str2, int &out)
 {
+	ZYBK_TRACE();
 	LOGD("Solving!");
 	LOGD("str1=%s, str2=%s !", str1.c_str(), str2.c_str());
 	// cout << __FILE__ <<": "<<__func__<< ": solving!" << endl;
@@ -84,6 +89,7 @@ void solve(pHandle handle, string &str1, string &str2, int &out)
 }
 void destroy(pHandle handle)
 {
+	ZYBK_TRACE();
 	LOGD("Destroyed!");
 	// cout << __FILE__ << ": "<<__func__<<": destroyed!" << endl;
 	delete reinterpret_cast<SolutionKMP *>(handle);
@@ -91,6 +97,7 @@ void destroy(pHandle handle)
 
 void Entry(solutionEntryBase *entry)
 {
+	ZYBK_TRACE();
 	LOGD("Get Entry!");
 	// cout << __FILE__ << ": "<<__func__<<" get entry!"<< endl;
 	entry->create = create;

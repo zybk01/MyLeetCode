@@ -5,39 +5,37 @@
 #define LOGENABLE 1
 #endif
 #include <cstdio>
+#include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string.h>
 #include <string>
-
 using namespace std;
 
 class __declspec(dllexport) LogManager;
 
-
 #define RMPATH(x) (strrchr(x, '\\') ? strrchr(x, '\\') : x)
 #define RMPATHr(x) (strrchr(x, '/') ? strrchr(x, '/') : x)
-#define LOGD(...)                                                                                                           \
-    do                                                                                                                      \
-    {                                                                                                                       \
-        if (LOGENABLE)                                                                                                      \
-        {                                                                                                                   \
-            char *message = new char[1000];                                                                                 \
-            int i = 0;                                                                                                      \
-            *message = '\0';                                                                                                \
-            i += sprintf(message + i, "%-12s%-10s%-20s:%-20s:  ", __DATE__, __TIME__, RMPATHr(RMPATH(__FILE__)), __func__); \
-            i += sprintf(message + i, __VA_ARGS__);                                                                         \
-            LogManager::GetInstance()->postMessage(message);                                                                \
-            delete[] message;                                                                                               \
-        }                                                                                                                   \
+#define LOGD(...)                                                                                                                \
+    do                                                                                                                           \
+    {                                                                                                                            \
+        if (LOGENABLE)                                                                                                           \
+        {                                                                                                                        \
+            char *ZYBKLOG_message = new char[1000];                                                                              \
+            int i = 0;                                                                                                           \
+            *ZYBKLOG_message = '\0';                                                                                             \
+            time_t ZYBKLOG_time = time(nullptr);                                                                                 \
+            i += sprintf(ZYBKLOG_message + i, "%-22ld%-20s:%-20s:  ", ZYBKLOG_time, RMPATHr(RMPATH(__FILE__)), __func__); \
+            i += sprintf(ZYBKLOG_message + i, __VA_ARGS__);                                                                      \
+            LogManager::GetInstance()->postMessage(ZYBKLOG_message);                                                             \
+            delete[] ZYBKLOG_message;                                                                                            \
+        }                                                                                                                        \
     } while (0)
 
 // i += sprintf(message + i, "\n");
 
 // #define ZYBK_TRACE TraceWrapper zybkTraceHELPPER(string(__DATE__) + string(__TIME__) + string(RMPATHr(RMPATH(__FILE__))) + string(__func__) + to_string(__LINE__))
-
-
 
 class __declspec(dllexport) LogManager
 {
@@ -50,6 +48,5 @@ public:
     static LogManager *GetInstance();
     void postMessage(string);
 };
-
 
 #endif

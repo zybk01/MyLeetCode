@@ -4,6 +4,7 @@
 #include "zybkLog.h"
 #include <iostream>
 #include <string>
+#include"zybkTrace.h"
 
 typedef void *pHandle;
 typedef void **pData;
@@ -32,6 +33,7 @@ struct solutionEntry : solutionEntryBase
     template <class... Args>
     void process(pHandle handle, Args &...args)
     {
+        ZYBK_TRACE();
         LOGD("Process!");
         //std::cout << __FILE__ << ": " << __func__ << std::endl;
         // solvefunc func2= reinterpret_cast<solvefunc>(solve);

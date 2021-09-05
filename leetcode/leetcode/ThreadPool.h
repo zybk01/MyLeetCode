@@ -20,10 +20,15 @@ struct ThreadTask
     string taskName;
     std::function<void()> func;
 };
+class ThreadPool;
 
-class ThreadPool
+class __declspec(dllexport) ThreadPool
 {
 public:
+    int getNumThreads()
+    {
+        return mNumThreads;
+    }
     /**
        *  @brief  deconstructor to clean up threads.
        *  when all threads finished, mostly they are in wait() state
@@ -49,6 +54,7 @@ public:
        */
     auto checkOut()
     {
+        // ZYBK_TRACE();
         {
             auto lock = std::unique_lock<std::mutex>(mThreadLock);
             isRunning = false;
@@ -61,12 +67,23 @@ public:
         //    / cout << "checkout!!!" << endl;
         return busy.get_future();
     }
-    static ThreadPool *GetInstance()
-    {
-        static ThreadPool *mThreadPool = new ThreadPool(MAX_THREADS);
-        return mThreadPool;
-    }
+    static ThreadPool *GetInstance();
 
+    /**
+       *  @brief  Post a task to ThreadPool.
+       *  @param  task  a packaged task
+       *  This function will %post the %func to the specified
+       *  thread if assigned. threadPool related functions like LOGD&ZYBKTRACE,
+       *  should not be presented in this function to avoid recursive call.
+       */
+    auto PostJob(ThreadTask &task) -> void
+    {
+        auto threadId = task.threadId;
+        auto lock = std::unique_lock<std::mutex>(mThreadLock);
+        mTaskQueue[threadId].push(task);
+        jobRemine |= 0x1 << threadId;
+        mCond[threadId].notify_all();
+    }
     /**
        *  @brief  Post a task to ThreadPool.
        *  @param  func  a function pointer to be called,and due to current implementation,this function must not contain rvalue refrence imput params.
@@ -77,31 +94,34 @@ public:
        *  thread if assigned.  If the %threadId is bigger than the
        *  threadPool's current thread num, the %threadId is set to 0.
        */
-    template <typename F, class... Args>
-    auto PostJob(F &&func, string taskName, int threadId, Args &&...args) 
-    -> std::future<decltype(forward<F>(func)(forward<Args>(args)...))>
-    {
-       
-        //using return_type=typename std::result_of<F(Args...)>::type;
-        // using mtype = typename std::result_of<F&(Args &&...)>::type;
-        // using mtype1= decltype(forward<F>(func)(forward<Args>(args)...));
-        // auto lock = std::unique_lock<std::mutex>(mThreadLock);
-        // auto mbind=bind(std::forward<F>(func), std::forward<Args>(args)...);
-        // auto mTask = std::make_shared<std::packaged_task<mtype1()>>(ref(mbind));
-        using mtype = typename std::result_of<F&(Args &&...)>::type;
-        // using mtype1= decltype(forward<F>(func)(forward<Args>(args)...));
-        auto lock = std::unique_lock<std::mutex>(mThreadLock);
-        auto mTask = std::make_shared<std::packaged_task<mtype()>>(bind(std::forward<F>(func), std::forward<Args>(args)...));
-        
-        auto ret = mTask->get_future();
-        threadId = threadId < 0 ? 0 : threadId;
-        mTaskQueue[threadId].push({threadId >= mNumThreads ? 0 : threadId, taskName, {[mTask]()
-                                                                                      { (*mTask)(); }}});
-        jobRemine |= 0x1 << threadId;
-        mCond[threadId].notify_all();
-        // LOGD("Posted!");
-        return ret;
-    }
+    // template <typename F, class... Args>
+    // auto PostJob(F &&func, string taskName, int threadId, Args &&...args) -> std::future<decltype(func(args...))>
+    // {
+
+    //     //using return_type=typename std::result_of<F(Args...)>::type;
+    //     // using mtype = typename std::result_of<F&(Args &&...)>::type;
+    //     // using mtype1= decltype(forward<F>(func)(forward<Args>(args)...));
+    //     // auto lock = std::unique_lock<std::mutex>(mThreadLock);
+    //     // auto mbind=bind(std::forward<F>(func), std::forward<Args>(args)...);
+    //     // auto mTask = std::make_shared<std::packaged_task<mtype1()>>(ref(mbind));
+    //     using mtype = typename std::result_of<F&(Args &&...)>::type;
+    //     // using mtype1= decltype(forward<F>(func)(forward<Args>(args)...));
+
+    //     auto mTask = std::make_shared<std::packaged_task<mtype()>>(bind(std::forward<F>(func), std::forward<Args>(args)...));
+
+    //     auto ret = mTask->get_future();
+    //     threadId = threadId < 0 ? 0 : threadId;
+    //     {
+    //         auto lock = std::unique_lock<std::mutex>(mThreadLock);
+    //     mTaskQueue[threadId].push({threadId >= mNumThreads ? 0 : threadId, taskName, {[mTask]()
+    //                                                                                   { (*mTask)(); }}});
+    //     jobRemine |= 0x1 << threadId;
+    //     mCond[threadId].notify_all();
+
+    //     }
+    //     // LOGD("Posted!");
+    //     return ret;
+    // }
     // template <typename F>
     // auto PostJob(F&& func) -> std::future<typename std::result_of<F()>::type>
     // {
@@ -167,7 +187,7 @@ protected:
                     task.func();
                     if (threadId != 9)
                     {
-                        LOGD("taskName: %s , threadId= %d !", task.taskName.c_str(), task.threadId);
+                        LOGD("threadPool addr=%d taskName: %s , threadId= %d !", (long long)(this), task.taskName.c_str(), task.threadId);
                     }
                 }
                 catch (exception e)
@@ -208,6 +228,26 @@ private:
     int jobRemine;
     int mNumThreads;
     promise<bool> busy;
+};
+
+class __declspec(dllexport) ThreadPoolManager
+{
+public:
+    template <typename F, class... Args>
+    static auto PostJob(F &&func, string taskName, int threadId, Args &&...args) -> std::future<decltype(func(args...))>
+    {
+        // using mtype = typename std::result_of<F &(Args && ...)>::type;
+        using mtype = decltype(func(args...));
+
+        auto mTask = std::make_shared<std::packaged_task<mtype()>>(bind(std::forward<F>(func), std::forward<Args>(args)...));
+
+        auto ret = mTask->get_future();
+        threadId = threadId < 0 ? 0 : threadId;
+        ThreadTask task = {threadId >= ThreadPool::GetInstance()->getNumThreads() ? 0 : threadId, taskName, {[mTask]()
+                                                                                                             { (*mTask)(); }}};
+        ThreadPool::GetInstance()->PostJob(task);
+        return ret;
+    }
 };
 
 #endif

@@ -1,6 +1,6 @@
 #include "zybkLog.h"
 #include "ThreadPool.h"
-#include "zybkTrace.h"
+// #include "zybkTrace.h"
 
 LogManager *LogManager::GetInstance()
 {
@@ -11,7 +11,7 @@ LogManager *LogManager::GetInstance()
 
 void LogManager::postMessage(string message)
 {
-    ThreadPool::GetInstance()->PostJob([](string str)
+    ThreadPoolManager::PostJob([](string str)
                                        { cout << str << endl; },
                                        "LogManager", 9, message).get();
 }

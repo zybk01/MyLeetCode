@@ -6,19 +6,40 @@
 #include <string>
 #include <windows.h>
 
+LONG WINAPI __declspec(dllexport)  MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *ExceptionInfo)
+{
+    TraceManager::GetInstance()->dumpTrace();
+
+    LOGD("ERROR!!!!!");
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+void dumpTrace()
+{
+    TraceManager::GetInstance()->dumpTrace();
+}
+
+TraceManager* TraceManager::mTraceManager=nullptr;
+mutex TraceManager::mLock;
 TraceManager *TraceManager::GetInstance()
 {
-    static TraceManager *mTraceManager = new TraceManager();
+    if (mTraceManager == nullptr)
+    {
+        unique_lock<mutex> lock(mLock);
+        if(mTraceManager == nullptr){
+            // cout << "set exception filter" << endl;
+            SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
+            mTraceManager = new TraceManager();
+        }
+    }
     return mTraceManager;
 }
-    /**
+/**
        *  @brief  implement this function only to pass it to threadPool.
        *  @param  string  a string that record the call stack
        */
-int stackTrace(string trace, unsigned int mthread)
+void stackTrace(string trace, unsigned int mthread)
 {
     TraceManager::GetInstance()->addTrace(trace, mthread);
-    return 0;
 }
 void unstackTrace(unsigned int mthread)
 {
@@ -26,19 +47,19 @@ void unstackTrace(unsigned int mthread)
 }
 TraceWrapper::TraceWrapper(string &&mtrace)
 {
-    unsigned int tid=(unsigned int)GetCurrentThreadId();
+    unsigned int tid = (unsigned int)GetCurrentThreadId();
     // using mtype=decltype(stackTrace(string("move(mtrace)"),1));
     // auto mTask1 = std::make_shared<std::packaged_task<mtype()>>(bind((stackTrace), string("move(mtrace)"),1));
     // auto mTask = std::make_shared<std::packaged_task<mtype()>>(bind((stackTrace), "move(mtrace)",move(tid)));
-    ThreadPool::GetInstance()->PostJob(stackTrace, "stackTrace", 8, mtrace, (tid));
+    ThreadPoolManager::PostJob(stackTrace, "stackTrace", 8, mtrace, (tid)).get();
 }
 TraceWrapper::TraceWrapper(string &trace)
 {
-    unsigned int tid=(unsigned int)GetCurrentThreadId();
-    ThreadPool::GetInstance()->PostJob(stackTrace, "stackTrace", 8,(trace), (tid));
+    unsigned int tid = (unsigned int)GetCurrentThreadId();
+    ThreadPoolManager::PostJob(stackTrace, "stackTrace", 8, (trace), (tid)).get();
 }
 TraceWrapper::~TraceWrapper()
 {
-    ThreadPool::GetInstance()->PostJob(unstackTrace,
-                                       "unstackTrace", 8, (unsigned int)GetCurrentThreadId());
+    ThreadPoolManager::PostJob(unstackTrace,
+                                       "unstackTrace", 8, (unsigned int)GetCurrentThreadId()).get();
 }

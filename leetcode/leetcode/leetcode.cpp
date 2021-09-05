@@ -1,4 +1,4 @@
-// leetcode.cpp 
+// leetcode.cpp
 
 #include "algorithmFactory.h"
 #include "maxSubArray.cpp"
@@ -7,15 +7,15 @@
 #include <deque>
 #include <iostream>
 // #include <libloaderapi.h>
+#include "ThreadPool.h"
+#include "zybkLog.h"
+#include "zybkTrace.h"
 #include <Windows.h>
-#include"ThreadPool.h"
-#include<iomanip>
-#include"zybkLog.h"
-
-
+#include <iomanip>
 
 int main()
 {
+	ZYBK_TRACE();
 	LOGD("start main function!");
 
 	solutionEntry mSolution;
