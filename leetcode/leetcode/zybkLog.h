@@ -17,20 +17,25 @@ class __declspec(dllexport) LogManager;
 
 #define RMPATH(x) (strrchr(x, '\\') ? strrchr(x, '\\') : x)
 #define RMPATHr(x) (strrchr(x, '/') ? strrchr(x, '/') : x)
-#define LOGD(...)                                                                                                                \
-    do                                                                                                                           \
-    {                                                                                                                            \
-        if (LOGENABLE)                                                                                                           \
-        {                                                                                                                        \
-            char *ZYBKLOG_message = new char[1000];                                                                              \
-            int i = 0;                                                                                                           \
-            *ZYBKLOG_message = '\0';                                                                                             \
-            time_t ZYBKLOG_time = time(nullptr);                                                                                 \
-            i += sprintf(ZYBKLOG_message + i, "%-22ld%-20s:%-20s:  ", ZYBKLOG_time, RMPATHr(RMPATH(__FILE__)), __func__); \
-            i += sprintf(ZYBKLOG_message + i, __VA_ARGS__);                                                                      \
-            LogManager::GetInstance()->postMessage(ZYBKLOG_message);                                                             \
-            delete[] ZYBKLOG_message;                                                                                            \
-        }                                                                                                                        \
+#define LOGD(...)                                                                                          \
+    do                                                                                                     \
+    {                                                                                                      \
+        if (LOGENABLE)                                                                                     \
+        {                                                                                                  \
+            char *ZYBKLOG_message = new char[1000];                                                        \
+            int i = 0;                                                                                     \
+            *ZYBKLOG_message = '\0';                                                                       \
+            SYSTEMTIME ZYBKLOG_time;                                                                       \
+            GetLocalTime(&ZYBKLOG_time);                                                                   \
+            time_t ZYBKLOG_time1 = time(nullptr);                                                          \
+            i += sprintf(ZYBKLOG_message + i, "%4d/%02d/%02d %02d:%02d:%02d.%03d ", ZYBKLOG_time.wYear,    \
+                         ZYBKLOG_time.wMonth, ZYBKLOG_time.wDay, ZYBKLOG_time.wHour, ZYBKLOG_time.wMinute, \
+                         ZYBKLOG_time.wSecond, ZYBKLOG_time.wMilliseconds);                                \
+            i += sprintf(ZYBKLOG_message + i, "%-20s:%-20s:  ", RMPATHr(RMPATH(__FILE__)), __func__);      \
+            i += sprintf(ZYBKLOG_message + i, __VA_ARGS__);                                                \
+            LogManager::GetInstance()->postMessage(ZYBKLOG_message);                                       \
+            delete[] ZYBKLOG_message;                                                                      \
+        }                                                                                                  \
     } while (0)
 
 // i += sprintf(message + i, "\n");

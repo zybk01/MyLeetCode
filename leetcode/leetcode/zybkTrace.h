@@ -15,18 +15,23 @@ using namespace std;
 // class __declspec(dllexport) TraceManager;
 class __declspec(dllexport) TraceWrapper;
 
-#define ZYBK_TRACE()                                                                                             \
-    char *ZYBKTRACE_message = new char[1000];                                                                    \
-    int ZYBKTRACE_i = 0;                                                                                         \
-    time_t ZYBKTRACE_time = time(nullptr);                                                                       \
-    *ZYBKTRACE_message = '\0';                                                                                   \
-    ZYBKTRACE_i += sprintf(ZYBKTRACE_message + ZYBKTRACE_i, "%-22ld%-20s:%-20s:%-10d  processId:%d  threadId:%d", \
-                           ZYBKTRACE_time, RMPATHr(RMPATH(__FILE__)), __func__, __LINE__,                \
-                           (unsigned int)GetCurrentProcessId(), (unsigned int)GetCurrentThreadId());             \
-    TraceWrapper zybkTraceHELPPER(ZYBKTRACE_message);                                                            \
-    do                                                                                                           \
-    {                                                                                                            \
-        delete[] ZYBKTRACE_message;                                                                              \
+#define ZYBK_TRACE()                                                                                                    \
+    char *ZYBKTRACE_message = new char[1000];                                                                           \
+    int ZYBKTRACE_i = 0;                                                                                                \
+    *ZYBKTRACE_message = '\0';                                                                                          \
+    SYSTEMTIME ZYBKTRACE_time;                                                                                          \
+    GetLocalTime(&ZYBKTRACE_time);                                                                                      \
+    time_t ZYBKTRACE_time1 = time(nullptr);                                                                             \
+    ZYBKTRACE_i += sprintf(ZYBKTRACE_message + ZYBKTRACE_i, "%4d/%02d/%02d %02d:%02d:%02d.%03d ", ZYBKTRACE_time.wYear, \
+                           ZYBKTRACE_time.wMonth, ZYBKTRACE_time.wDay, ZYBKTRACE_time.wHour, ZYBKTRACE_time.wMinute,    \
+                           ZYBKTRACE_time.wSecond, ZYBKTRACE_time.wMilliseconds);                                       \
+    ZYBKTRACE_i += sprintf(ZYBKTRACE_message + ZYBKTRACE_i, "%-22ld%-20s:%-20sLINE:%-10d  processId:%d  threadId:%d",   \
+                           ZYBKTRACE_time, RMPATHr(RMPATH(__FILE__)), __func__, __LINE__,                               \
+                           (unsigned int)GetCurrentProcessId(), (unsigned int)GetCurrentThreadId());                    \
+    TraceWrapper zybkTraceHELPPER(ZYBKTRACE_message);                                                                   \
+    do                                                                                                                  \
+    {                                                                                                                   \
+        delete[] ZYBKTRACE_message;                                                                                     \
     } while (0)
 
 class TraceManager
