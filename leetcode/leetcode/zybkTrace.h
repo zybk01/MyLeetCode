@@ -16,23 +16,7 @@ using namespace std;
 class __declspec(dllexport) TraceWrapper;
 
 #define ZYBK_TRACE()                                                                                                    \
-    char *ZYBKTRACE_message = new char[1000];                                                                           \
-    int ZYBKTRACE_i = 0;                                                                                                \
-    *ZYBKTRACE_message = '\0';                                                                                          \
-    SYSTEMTIME ZYBKTRACE_time;                                                                                          \
-    GetLocalTime(&ZYBKTRACE_time);                                                                                      \
-    time_t ZYBKTRACE_time1 = time(nullptr);                                                                             \
-    ZYBKTRACE_i += sprintf(ZYBKTRACE_message + ZYBKTRACE_i, "%4d/%02d/%02d %02d:%02d:%02d.%03d ", ZYBKTRACE_time.wYear, \
-                           ZYBKTRACE_time.wMonth, ZYBKTRACE_time.wDay, ZYBKTRACE_time.wHour, ZYBKTRACE_time.wMinute,    \
-                           ZYBKTRACE_time.wSecond, ZYBKTRACE_time.wMilliseconds);                                       \
-    ZYBKTRACE_i += sprintf(ZYBKTRACE_message + ZYBKTRACE_i, "%-22ld%-20s:%-20sLINE:%-10d  processId:%d  threadId:%d",   \
-                           ZYBKTRACE_time, RMPATHr(RMPATH(__FILE__)), __func__, __LINE__,                               \
-                           (unsigned int)GetCurrentProcessId(), (unsigned int)GetCurrentThreadId());                    \
-    TraceWrapper zybkTraceHELPPER(ZYBKTRACE_message);                                                                   \
-    do                                                                                                                  \
-    {                                                                                                                   \
-        delete[] ZYBKTRACE_message;                                                                                     \
-    } while (0)
+    TraceWrapper zybkTraceHELPPER(__FILE__, __func__, __LINE__);
 
 class TraceManager
 {
@@ -83,7 +67,7 @@ public:
     void dumpTrace()
     {
         std::fstream fs;
-        fs.open("C:\\Users\\zy113\\vsProjects\\test.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+        fs.open("D:\\repo\\MyLeetCode\\backtrace.txt", std::fstream::in | std::fstream::out | std::fstream::app);
         // LOGD("%d",mStackMap.size());
         for (auto itr : mStackMap)
         {
@@ -107,8 +91,8 @@ void __declspec(dllexport) dumpTrace();
 class __declspec(dllexport) TraceWrapper
 {
 public:
-    TraceWrapper(string &&mtrace);
-    TraceWrapper(string &trace);
+    TraceWrapper(string &&mtrace, const char *, int);
+    TraceWrapper(string &trace, const char *, int);
     ~TraceWrapper();
     TraceWrapper(const TraceWrapper &) = delete;
     TraceWrapper operator=(const TraceWrapper &) = delete;
