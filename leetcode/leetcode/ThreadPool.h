@@ -14,6 +14,16 @@
 #include <vector>
 #define MAX_THREADS 15
 
+enum threadStatus : int
+{
+    THREAD_SUBMIT,
+    THREAD_STOPED,
+    THREAD_ERROR_ID,
+
+};
+
+string threadStatus2str(threadStatus status);
+
 struct ThreadTask
 {
     int threadId;
@@ -36,14 +46,19 @@ public:
        */
     ~ThreadPool()
     {
-        LOGD(__func__);
-        // std::cout << __FILE__ << ": " << __func__ << std::endl;
-
+        {
+            auto lock = std::unique_lock<std::mutex>(mThreadLock);
+            isRunning = false;
+        }
         for (int i = 0; i < mNumThreads; i++)
         {
-            mCond[i].notify_all();
+            {
+                auto lock = std::unique_lock<std::mutex>(mThreadLock);
+                mCond[i].notify_all();
+            }
             mThreads[i].join();
         }
+        LOG_DEBUG(" ");
     }
     /**
        *  @brief  tell ThreadPool current process is going down.
@@ -57,14 +72,13 @@ public:
         // ZYBK_TRACE();
         {
             auto lock = std::unique_lock<std::mutex>(mThreadLock);
-            isRunning = false;
-            if (jobRemine == 0)
+            isCheckingOut = true;
+            if ((jobRemine & 0xFF) == 0)
             {
                 busy.set_value(false);
-                // cout << "future set!!!" << endl;
+                cout << "future set!!!" << endl;
             }
         }
-        //    / cout << "checkout!!!" << endl;
         return busy.get_future();
     }
     static ThreadPool *GetInstance();
@@ -76,13 +90,21 @@ public:
        *  thread if assigned. threadPool related functions like LOGD&ZYBKTRACE,
        *  should not be presented in this function to avoid recursive call.
        */
-    auto PostJob(ThreadTask &task) -> void
+    auto PostJob(ThreadTask &task) -> threadStatus
     {
         auto threadId = task.threadId;
         auto lock = std::unique_lock<std::mutex>(mThreadLock);
+        if(!isRunning) {
+            return THREAD_STOPED;
+        }
+        if (isCheckingOut && threadId < 8)
+            return THREAD_STOPED;
+        if (threadId < 0 || threadId >= mNumThreads)
+            return THREAD_ERROR_ID;
         mTaskQueue[threadId].push(task);
         jobRemine |= 0x1 << threadId;
         mCond[threadId].notify_all();
+        return THREAD_SUBMIT;
     }
     /**
        *  @brief  Post a task to ThreadPool.
@@ -141,6 +163,7 @@ protected:
         // std::cout << __FILE__ << ": " << __func__ << " Threads number = " << num << std::endl;
         mNumThreads = num;
         isRunning = true;
+        isCheckingOut = false;
         mTaskQueue.resize(mNumThreads);
         jobRemine = 0;
         //mTaskQueue.
@@ -163,9 +186,7 @@ protected:
                 if (mTaskQueue[threadId].empty())
                 {
                     // cout << "wait!!! : " << threadId << endl;
-
                     mCond[threadId].wait(lock);
-                    // cout << "wake!!! : " << threadId << endl;
                 }
 
                 if (!mTaskQueue[threadId].empty())
@@ -173,11 +194,6 @@ protected:
                     task = mTaskQueue[threadId].front();
                     mTaskQueue[threadId].pop();
                     valid = true;
-
-                    // if (!isRunning && jobRemine == 0)
-                    // {
-                    //     busy.set_value(false);
-                    // }
                 }
             }
             if (valid)
@@ -199,21 +215,19 @@ protected:
                 auto lock = std::unique_lock<std::mutex>(mThreadLock);
                 if (!mTaskQueue[threadId].empty())
                 {
-                    // jobRemine[threadId] = true;
                     jobRemine |= 0x1 << threadId;
                 }
                 else
                 {
-                    // jobRemine[threadId] = false;
                     jobRemine &= ~(0x1 << threadId);
-                }
-                // cout << "remine!! : " <<std::hex<<jobRemine<< endl;
-                if (!isRunning && jobRemine == 0)
-                {
-
-                    // cout << "set!! : " <<threadId<< endl;
-                    busy.set_value(false);
-                    break;
+                    if (isCheckingOut && ((jobRemine & 0xFF) == 0) && threadId < 8)
+                    {
+                        busy.set_value(false);
+                        break;
+                    }
+                    if(!isRunning) {
+                        break;
+                    }
                 }
             }
         }
@@ -225,6 +239,7 @@ private:
     std::condition_variable mCond[MAX_THREADS];
     std::mutex mThreadLock;
     bool isRunning;
+    bool isCheckingOut;
     int jobRemine;
     int mNumThreads;
     promise<bool> busy;
@@ -234,19 +249,20 @@ class __declspec(dllexport) ThreadPoolManager
 {
 public:
     template <typename F, class... Args>
-    static auto PostJob(F &&func, string taskName, int threadId, Args &&...args) -> std::future<decltype(func(args...))>
+    static auto PostJob(F &&func, string taskName, int threadId, Args &&...args) -> pair<std::shared_future<decltype(func(args...))> , threadStatus>
     {
         // using mtype = typename std::result_of<F &(Args && ...)>::type;
         using mtype = decltype(func(args...));
 
         auto mTask = std::make_shared<std::packaged_task<mtype()>>(bind(std::forward<F>(func), std::forward<Args>(args)...));
 
-        auto ret = mTask->get_future();
+        auto ret = shared_future<decltype(func(args...))>(mTask->get_future());
         threadId = threadId < 0 ? 0 : threadId;
         ThreadTask task = {threadId >= ThreadPool::GetInstance()->getNumThreads() ? 0 : threadId, taskName, {[mTask]()
                                                                                                              { (*mTask)(); }}};
-        ThreadPool::GetInstance()->PostJob(task);
-        return ret;
+        threadStatus status = ThreadPool::GetInstance()->PostJob(task);
+        LOG_DEBUG("task:%s ,threadid %d post statu:%s", taskName.c_str(), threadId, threadStatus2str(status).c_str());
+        return pair<std::shared_future<decltype(func(args...))> , threadStatus>(ret, status);
     }
 };
 

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <thread>
 #include <windows.h>
+#include "zybkopengl.h"
 
 
 void TraceCheck()
@@ -17,12 +18,14 @@ void TraceCheck()
     int *g = nullptr;
     *g = 1;
 }
-int main(int, char **)
+int main(int num, char ** args)
 {
     ZYBK_TRACE();
-    // SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
+    for (int i = 0; i < num; i++) {
+        // LOGD("main input [%d] : %s", i, args[i]);
+    }
     SolutionIsValidBST().isValidBST(new TreeNode(0));
-    ThreadPoolManager::PostJob(TraceCheck, "wrong", 1).get();
+    opengl();
     auto checkoutsignal = ThreadPool::GetInstance()->checkOut();
     checkoutsignal.get();
     // system("pause");
