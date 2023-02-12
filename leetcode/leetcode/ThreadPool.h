@@ -12,17 +12,36 @@
 #include <string>
 #include <thread>
 #include <vector>
-#define MAX_THREADS 15
+
+enum threadStatus : int
+{
+    THREAD_SUBMIT,
+    THREAD_STOPED,
+    THREAD_ERROR_ID,
+};
+
+enum threadType : int
+{
+    THREAD_TYPE_TASK,
+    THREAD_TYPE_LOG,
+    THREAD_TYPE_TRACE,
+    THREAD_TYPE_MAX,
+};
+
+string threadStatus2str(threadStatus status);
 
 struct ThreadTask
 {
-    int threadId;
+    threadType type;
     string taskName;
     std::function<void()> func;
 };
+
 class ThreadPool;
 
-class __declspec(dllexport) ThreadPool
+#define MAX_THREADS 8
+
+class ThreadPool
 {
 public:
     int getNumThreads()
@@ -30,70 +49,96 @@ public:
         return mNumThreads;
     }
     /**
-       *  @brief  deconstructor to clean up threads.
-       *  when all threads finished, mostly they are in wait() state
-       *  call this to notify them.
-       */
+     *  @brief  deconstructor to clean up threads.
+     *  when all threads finished, mostly they are in wait() state
+     *  call this to notify them.
+     */
     ~ThreadPool()
     {
-        LOGD(__func__);
-        // std::cout << __FILE__ << ": " << __func__ << std::endl;
-
-        for (int i = 0; i < mNumThreads; i++)
-        {
-            mCond[i].notify_all();
-            mThreads[i].join();
-        }
+        // {
+        //     auto lock = std::unique_lock<std::mutex>(mThreadLock);
+        //     isRunning = false;
+        // }
+        // for (int i = 0; i < THREAD_TYPE_MAX; i++)
+        // {
+        //     mCond[i].notify_all();
+        // }
+        // offline.get_future().get();
+        // for (int i = 0; i < 10; i++)
+        // {
+        //     mThreads[i].detach();
+        // }
     }
     /**
-       *  @brief  tell ThreadPool current process is going down.
-       *  call future.get() to block main function until all tasks finished.
-       *  take care to stop loop tasks before you call this function
-       *  otherwise main process will block,in that case we recommend
-       *  you exit main without calling this function
-       */
+     *  @brief  tell ThreadPool current process is going down.
+     *  call future.get() to block main function until all tasks finished.
+     *  take care to stop loop tasks before you call this function
+     *  otherwise main process will block,in that case we recommend
+     *  you exit main without calling this function
+     */
     auto checkOut()
     {
         // ZYBK_TRACE();
+        // {
+        //     auto lock = std::unique_lock<std::mutex>(mThreadLock);
+        //     int mask = (0x1 << (THREAD_TYPE_TASK + 1)) - 1;
+        //     isCheckingOut = true;
+        //     if ((jobRemine & mask) == 0)
+        //     {
+        //         busy.set_value(false);
+        //     }
+        // }
         {
             auto lock = std::unique_lock<std::mutex>(mThreadLock);
             isRunning = false;
-            if (jobRemine == 0)
-            {
-                busy.set_value(false);
-                // cout << "future set!!!" << endl;
-            }
         }
-        //    / cout << "checkout!!!" << endl;
-        return busy.get_future();
+        for (int i = 0; i < THREAD_TYPE_MAX; i++)
+        {
+            mCond[i].notify_all();
+        }
+        offline.get_future().get();
+        for (int i = 0; i < 10; i++)
+        {
+            mThreads[i].join();
+        }
+        // return busy.get_future();
     }
     static ThreadPool *GetInstance();
 
     /**
-       *  @brief  Post a task to ThreadPool.
-       *  @param  task  a packaged task
-       *  This function will %post the %func to the specified
-       *  thread if assigned. threadPool related functions like LOGD&ZYBKTRACE,
-       *  should not be presented in this function to avoid recursive call.
-       */
-    auto PostJob(ThreadTask &task) -> void
+     *  @brief  Post a task to ThreadPool.
+     *  @param  task  a packaged task
+     *  This function will %post the %func to the specified
+     *  thread if assigned. threadPool related functions like LOGD&ZYBKTRACE,
+     *  should not be presented in this function to avoid recursive call.
+     */
+    auto PostJob(ThreadTask &task) -> threadStatus
     {
-        auto threadId = task.threadId;
+        auto threadType = task.type;
         auto lock = std::unique_lock<std::mutex>(mThreadLock);
-        mTaskQueue[threadId].push(task);
-        jobRemine |= 0x1 << threadId;
-        mCond[threadId].notify_all();
+        if (!isRunning)
+        {
+            return THREAD_STOPED;
+        }
+        if (isCheckingOut && threadType == THREAD_TYPE_TASK)
+            return THREAD_STOPED;
+        if (threadType < THREAD_TYPE_TASK || threadType >= THREAD_TYPE_MAX)
+            return THREAD_ERROR_ID;
+        mTaskQueue[threadType].push(task);
+        jobRemine |= 0x1 << threadType;
+        mCond[threadType].notify_all();
+        return THREAD_SUBMIT;
     }
     /**
-       *  @brief  Post a task to ThreadPool.
-       *  @param  func  a function pointer to be called,and due to current implementation,this function must not contain rvalue refrence imput params.
-       *  @param  taskName  a string to identify task
-       *  @param  threadId  should be -1 by default,set this Id to dispatch task to certain thread
-       *  @param  args...  func input params
-       *  This function will %post the %func to the specified
-       *  thread if assigned.  If the %threadId is bigger than the
-       *  threadPool's current thread num, the %threadId is set to 0.
-       */
+     *  @brief  Post a task to ThreadPool.
+     *  @param  func  a function pointer to be called,and due to current implementation,this function must not contain rvalue refrence imput params.
+     *  @param  taskName  a string to identify task
+     *  @param  threadId  should be -1 by default,set this Id to dispatch task to certain thread
+     *  @param  args...  func input params
+     *  This function will %post the %func to the specified
+     *  thread if assigned.  If the %threadId is bigger than the
+     *  threadPool's current thread num, the %threadId is set to 0.
+     */
     // template <typename F, class... Args>
     // auto PostJob(F &&func, string taskName, int threadId, Args &&...args) -> std::future<decltype(func(args...))>
     // {
@@ -137,84 +182,78 @@ public:
 protected:
     ThreadPool(int num)
     {
-        // LOGD("Starting Threads, Threads number =%d", num);
-        // std::cout << __FILE__ << ": " << __func__ << " Threads number = " << num << std::endl;
-        mNumThreads = num;
+        LOG_DEBUG("spawn threadNum %d %d", num, (unsigned int)GetCurrentThreadId());
+        // ic.active();
+        auto lock = std::unique_lock<std::mutex>(mThreadLock);
+        int threadCfg[THREAD_TYPE_MAX] = {MAX_THREADS, 1, 1};
+        mNumThreads = 0;
         isRunning = true;
-        mTaskQueue.resize(mNumThreads);
+        isCheckingOut = false;
+        mTaskQueue.resize(THREAD_TYPE_MAX);
         jobRemine = 0;
-        //mTaskQueue.
-        for (int i = 0; i < mNumThreads; i++)
+        // mTaskQueue.
+        int nnmu = 0;
+        for (int i = 0; i < THREAD_TYPE_MAX; i++)
         {
-            mThreads.push_back(std::thread(threadLoop, this, i));
+            for (int j = 0; j < threadCfg[i]; j++)
+            {
+                mThreads.emplace_back(std::thread(threadLoop, this, (threadType)i));
+                if (mThreads[nnmu++].joinable())
+                    mNumThreads++;
+            }
         }
+        LOG_DEBUG("spawn joinable threadNum %d %d", mNumThreads, (unsigned int)GetCurrentThreadId());
     }
     ThreadPool(const ThreadPool &) = delete;
     ThreadPool operator=(const ThreadPool &) = delete;
 
-    void threadLoop(int threadId)
+    void threadLoop(threadType type)
     {
+        {
+            LOG_DEBUG("threadId_%d %d num %d", type, (unsigned int)GetCurrentThreadId(), mNumThreads);
+        }
         while (1)
         {
             ThreadTask task;
-            bool valid = false;
             {
                 auto lock = std::unique_lock<std::mutex>(mThreadLock);
-                if (mTaskQueue[threadId].empty())
-                {
-                    // cout << "wait!!! : " << threadId << endl;
-
-                    mCond[threadId].wait(lock);
-                    // cout << "wake!!! : " << threadId << endl;
-                }
-
-                if (!mTaskQueue[threadId].empty())
-                {
-                    task = mTaskQueue[threadId].front();
-                    mTaskQueue[threadId].pop();
-                    valid = true;
-
-                    // if (!isRunning && jobRemine == 0)
-                    // {
-                    //     busy.set_value(false);
-                    // }
-                }
-            }
-            if (valid)
-            {
-                try
-                {
-                    task.func();
-                    if (threadId != 9)
-                    {
-                        LOGD("threadPool addr=%d taskName: %s , threadId= %d !", (long long)(this), task.taskName.c_str(), task.threadId);
-                    }
-                }
-                catch (exception e)
-                {
-                    std::cout << __DATE__ << __TIME__ << RMPATHr(RMPATH(__FILE__)) << ": " << __func__ << " taskName:" << task.taskName.c_str() << " ERROR= " << e.what() << std::endl;
-                }
-            }
-            {
-                auto lock = std::unique_lock<std::mutex>(mThreadLock);
-                if (!mTaskQueue[threadId].empty())
-                {
-                    // jobRemine[threadId] = true;
-                    jobRemine |= 0x1 << threadId;
-                }
-                else
-                {
-                    // jobRemine[threadId] = false;
-                    jobRemine &= ~(0x1 << threadId);
-                }
-                // cout << "remine!! : " <<std::hex<<jobRemine<< endl;
-                if (!isRunning && jobRemine == 0)
-                {
-
-                    // cout << "set!! : " <<threadId<< endl;
-                    busy.set_value(false);
+                mCond[type].wait(lock,
+                                 [&]
+                                 { return !isRunning || !mTaskQueue[type].empty(); });
+                if (!isRunning && mTaskQueue[type].empty())
                     break;
-                }
+
+                task = mTaskQueue[type].front();
+                mTaskQueue[type].pop();
+            }
+
+            task.func();
+
+            // {
+            //     auto lock = std::unique_lock<std::mutex>(mThreadLock);
+            //     LOG_DEBUG("threadPool2  !");
+            //     if (!mTaskQueue[type].empty())
+            //     {
+            //         jobRemine |= 0x1 << type;
+            //     }
+            //     else
+            //     {
+            //         jobRemine &= ~(0x1 << type);
+            //         if (isCheckingOut && ((jobRemine & 0xFF) == 0) && type == THREAD_TYPE_TASK)
+            //         {
+            //             busy.set_value(false);
+            //             break;
+            //         }
+            //     }
+            // }
+        }
+        {
+            auto lock = std::unique_lock<std::mutex>(mThreadLock);
+            mNumThreads--;
+            LOG_DEBUG("exittt threadType_%d %d num %d", type, (unsigned int)GetCurrentThreadId(), mNumThreads);
+            if (mNumThreads == 0)
+            {
+                offline.set_value(true);
             }
         }
     }
@@ -222,31 +261,38 @@ protected:
 private:
     std::vector<std::thread> mThreads;
     std::vector<std::queue<ThreadTask>> mTaskQueue;
-    std::condition_variable mCond[MAX_THREADS];
+    std::condition_variable mCond[THREAD_TYPE_MAX];
     std::mutex mThreadLock;
     bool isRunning;
+    bool isCheckingOut;
     int jobRemine;
     int mNumThreads;
+    int threadCfg[THREAD_TYPE_MAX] = {MAX_THREADS, 1, 1};
     promise<bool> busy;
+    promise<bool> offline;
 };
 
-class __declspec(dllexport) ThreadPoolManager
+class ThreadPoolManager
 {
 public:
     template <typename F, class... Args>
-    static auto PostJob(F &&func, string taskName, int threadId, Args &&...args) -> std::future<decltype(func(args...))>
+    static auto PostJob(F &&func, string taskName, threadType type, Args &&...args) -> pair<std::shared_future<decltype(func(args...))>, threadStatus>
     {
         // using mtype = typename std::result_of<F &(Args && ...)>::type;
         using mtype = decltype(func(args...));
 
         auto mTask = std::make_shared<std::packaged_task<mtype()>>(bind(std::forward<F>(func), std::forward<Args>(args)...));
 
-        auto ret = mTask->get_future();
-        threadId = threadId < 0 ? 0 : threadId;
-        ThreadTask task = {threadId >= ThreadPool::GetInstance()->getNumThreads() ? 0 : threadId, taskName, {[mTask]()
-                                                                                                             { (*mTask)(); }}};
-        ThreadPool::GetInstance()->PostJob(task);
-        return ret;
+        auto ret = shared_future<decltype(func(args...))>(mTask->get_future());
+        ThreadTask task = {type, taskName, {[mTask]()
+                                            { (*mTask)(); }}};
+        threadStatus status = ThreadPool::GetInstance()->PostJob(task);
+        // LOG_DEBUG("task:%s ,threadid %d post statu:%s", taskName.c_str(), type, threadStatus2str(status).c_str());
+        return pair<std::shared_future<decltype(func(args...))>, threadStatus>(ret, status);
+    }
+    static auto CheckOut()
+    {
+        return ThreadPool::GetInstance()->checkOut();
     }
 };
 

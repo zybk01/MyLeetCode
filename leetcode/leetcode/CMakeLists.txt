@@ -8,6 +8,7 @@ set(EXECUTABLE_OUTPUT_PATH ${OUTPATH})
 
 if(${BUILD_LOG})
 add_library(zybk.util  SHARED zybkLog.cpp zybkTrace.cpp ThreadPool.cpp)
+set(CMAKE_CXX_FLAGS "-O0")
 endif(${BUILD_LOG})
 
 link_libraries(zybk.util)

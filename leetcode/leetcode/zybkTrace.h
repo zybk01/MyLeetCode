@@ -1,8 +1,9 @@
 #ifndef _ZYBKTRACE_H_
 #define _ZYBKTRACE_H_
 
-// #include "ThreadPool.h"
+#include "zybkLog.h"
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <mutex>
 #include <stack>
@@ -10,19 +11,19 @@
 #include <ctime>
 #include <string>
 #include <windows.h>
+#include <direct.h>
 
 using namespace std;
 // class __declspec(dllexport) TraceManager;
 class __declspec(dllexport) TraceWrapper;
 
 #define ZYBK_TRACE()                                                                                                    \
-    TraceWrapper zybkTraceHELPPER(__FILE__, __func__, __LINE__);
+    TraceWrapper zybkTraceHELPPER(__FILE__, __func__, __LINE__)
 
 class TraceManager
 {
     static TraceManager *mTraceManager;
     static mutex mLock;
-    //stack<string> mTraceStack;
     map<int, stack<string>> mStackMap;
 
 protected:
@@ -42,8 +43,6 @@ public:
             mStackMap.insert({mthread, move(sta)});
         }
         mStackMap[mthread].push(Trace);
-        // cout<<mStackMap[thread].size()<<endl;
-        // mTraceStack.push(Trace);
     }
     void addTrace(string &&Trace, int mthread)
     {
@@ -54,21 +53,19 @@ public:
             mStackMap.insert({mthread, sta});
         }
         mStackMap[mthread].push(Trace);
-
-        // mTraceStack.push(Trace);
     }
     void removeTrace(int mthread)
     {
+        LOG_DEBUG(mStackMap[mthread].top().c_str());
         mStackMap[mthread].pop();
-        // LOGD("~%d", mStackMap[mthread].size());
-        //  cout<<"~"<<mStackMap[thread].size()<<endl;
-        // mTraceStack.pop();
     }
     void dumpTrace()
     {
         std::fstream fs;
-        fs.open("D:\\repo\\MyLeetCode\\backtrace.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-        // LOGD("%d",mStackMap.size());
+        char path[1000];
+        _getcwd(path, 1000);
+        sprintf(path, "%s/backtrace.txt", path);   
+        fs.open(path, std::fstream::in | std::fstream::out | std::fstream::app);
         for (auto itr : mStackMap)
         {
             while (itr.second.size() > 0)
