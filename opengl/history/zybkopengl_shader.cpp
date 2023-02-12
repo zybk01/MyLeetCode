@@ -3,10 +3,6 @@
 #include "GLFW/glfw3.h"
 #include "zybkLog.h"
 #include "zybkTrace.h"
-<<<<<<< HEAD
-=======
-#include "shader.h"
->>>>>>> 89d3eb7 (threadpool destroy on process end)
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -63,42 +59,42 @@ int opengl()
     }
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    // unsigned int vertexShader;
-    // vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
-    // glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    // glCompileShader(vertexShader);
-    // int success;
-    // char infoLog[512];
-    // glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    // if (!success)
-    // {
-    //     glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-    //     LOGD("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s", infoLog);
-    // }
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        LOGD("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s", infoLog);
+    }
 
-    // unsigned int fragmentShader;
-    // fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    // glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    // glCompileShader(fragmentShader);
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
 
-    // unsigned int shaderProgram;
-    // shaderProgram = glCreateProgram();
-    // glAttachShader(shaderProgram, vertexShader);
-    // glAttachShader(shaderProgram, fragmentShader);
-    // glLinkProgram(shaderProgram);
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
 
-    // glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    // if (!success)
-    // {
-    //     glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-    //     LOGD("ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n%s", infoLog);
-    // }
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        LOGD("ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n%s", infoLog);
+    }
 
-    // glUseProgram(shaderProgram);
+    glUseProgram(shaderProgram);
 
-    // glDeleteShader(vertexShader);
-    // glDeleteShader(fragmentShader);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
 
     // float vertices[] = {
     //     -0.5f, -0.5f, 0.0f,
@@ -136,10 +132,6 @@ int opengl()
     //     0, 1, 3, // 第一个三角形
     //     1, 2, 3  // 第二个三角形
     // };
-<<<<<<< HEAD
-=======
-    Shader shader(vertexMap[VERTEX_TYPE_ONE].c_str(), fragmentMap[FRAGMENT_TYPE_ONE].c_str());
->>>>>>> 89d3eb7 (threadpool destroy on process end)
     unsigned int VAO;
     glGenVertexArrays(1, &VAO);
     unsigned int VBO;
@@ -170,22 +162,13 @@ int opengl()
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-<<<<<<< HEAD
         glUseProgram(shaderProgram);
-=======
-        shader.use();
-        // glUseProgram(shaderProgram);
->>>>>>> 89d3eb7 (threadpool destroy on process end)
         glBindVertexArray(VAO);
         // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         // float timeValue = glfwGetTime();
         // float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
         // int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-<<<<<<< HEAD
         glUseProgram(shaderProgram);
-=======
-        // glUseProgram(shaderProgram);
->>>>>>> 89d3eb7 (threadpool destroy on process end)
         // glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
         // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glDrawArrays(GL_TRIANGLES, 0, 3);
