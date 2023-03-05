@@ -4,9 +4,13 @@
 
 std::unordered_map<VertexType, std::string> vertexMap = {
     {VERTEX_TYPE_ONE, "opengl\\shaderSource\\vertexShader.vs"},
+    {VERTEX_TYPE_TWO, "opengl\\shaderSource\\textureVertexShader.vs"},
+    {VERTEX_TYPE_THREE, "opengl\\shaderSource\\rotate.vs"},
 };
 std::unordered_map<FragmentType, std::string> fragmentMap = {
     {FRAGMENT_TYPE_ONE, "opengl\\shaderSource\\fragmentShader.fs"},
+    {FRAGMENT_TYPE_TWO, "opengl\\shaderSource\\textureFragmentShader.fs"},
+    {FRAGMENT_TYPE_THREE, "opengl\\shaderSource\\rotate.fs"},
 };
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
 {

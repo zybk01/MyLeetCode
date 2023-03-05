@@ -287,7 +287,7 @@ public:
         ThreadTask task = {type, taskName, {[mTask]()
                                             { (*mTask)(); }}};
         threadStatus status = ThreadPool::GetInstance()->PostJob(task);
-        // LOG_DEBUG("task:%s ,threadid %d post statu:%s", taskName.c_str(), type, threadStatus2str(status).c_str());
+        LOG_DEBUG("task:%s ,threadid %d post statu:%s", taskName.c_str(), type, threadStatus2str(status).c_str());
         return pair<std::shared_future<decltype(func(args...))>, threadStatus>(ret, status);
     }
     static auto CheckOut()

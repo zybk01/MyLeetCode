@@ -27,7 +27,7 @@ class OOO{
         LOG_DEBUG("decons spawn threadNum %d", (unsigned int)GetCurrentThreadId());
     }
 };
-static OOO ooo;
+// static OOO ooo;
 // EXTERN_C {
 //     void* __declspec(dllexport) getThreadPool() {
 //         return ThreadPool::GetInstance();
@@ -38,7 +38,6 @@ ThreadPool* __declspec(dllexport) ThreadPool::GetInstance()
     // ZYBK_TRACE(); //should not present here as well as LOGD,for they internally require this function to be called.
     // static ThreadPool mThreadPool(MAX_THREADS);
     // return &mThreadPool;
-        ooo.aa();
     static ThreadPool mThreadPool(MAX_THREADS);
     return &mThreadPool;
 }

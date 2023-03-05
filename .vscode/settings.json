@@ -75,7 +75,8 @@
         "typeinfo": "cpp",
         "iomanip": "cpp",
         "variant": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "cstring": "cpp"
     },
     "C_Cpp.errorSquiggles": "Enabled", // 格式化时调整include的顺序（按字母排序）
 }

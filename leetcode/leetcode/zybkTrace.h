@@ -61,6 +61,7 @@ public:
     }
     void dumpTrace()
     {
+        // backtrace();
         std::fstream fs;
         char path[1000];
         _getcwd(path, 1000);

@@ -7,8 +7,6 @@
 #include <iostream>
 #include <thread>
 #include <windows.h>
-
-
 // typedef void *(*getThreadPool)();
 // HMODULE libHandle = LoadLibrary("libzybk.util.dll");
 // if (libHandle == NULL)
@@ -28,12 +26,14 @@
 int main(int num, char ** args)
 {
     ZYBK_TRACE();
+    // int *ptr;
+    // *ptr = 000;
     // SolutionIsValidBST().isValidBST(new TreeNode(0));
     opengl();
 
     ThreadPoolManager::CheckOut();
 
-    system("pause");
+    // system("pause");
 
     return 0;
 }

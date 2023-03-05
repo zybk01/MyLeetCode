@@ -1,200 +1,432 @@
 #include "zybkopengl.h"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
+#include "shader.h"
 #include "zybkLog.h"
 #include "zybkTrace.h"
-<<<<<<< HEAD
-=======
-#include "shader.h"
->>>>>>> 89d3eb7 (threadpool destroy on process end)
-#include <fstream>
-#include <iostream>
-#include <thread>
-#include <windows.h>
 #include <cmath>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <vector>
+#include <windows.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "stb_image.h"
 
-const char *vertexShaderSource = "#version 330 core\n"
-                                 "layout (location = 0) in vec3 aPos;\n"
-                                 "layout (location = 1) in vec3 aColor; // 颜色变量的属性位置值为 1\n"
-                                 "out vec3 ourColor; // 向片段着色器输出一个颜色\n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-                                 "   ourColor = aColor; // 把输出变量设置为暗红色;\n"
-                                 "}\0";
-const char *fragmentShaderSource = "#version 330 core\n"
-                                   "in vec3 ourColor;\n"
-                                   "out vec4 FragColor;\n"
-                                   "void main()\n"
-                                   "{\n"
-                                   "    FragColor = vec4(ourColor, 1.0);\n"
-                                   "}\0";
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+#define SCR_WIDTH 800
+#define SCR_HEIGHT 800
+#define SCR_BLOCK_SIZE (10)
+#define SCR_GRID_SIZE (SCR_BLOCK_SIZE + 1)
+struct Pos
 {
-    glViewport(0, 0, width, height);
-}
+    double x;
+    double y;
+    double z;
+    double a;
+};
 
-void processInput(GLFWwindow *window)
+class GLRenderprocessor
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-}
+public:
+    int setUpGlEnv()
+    {
+        ZYBK_TRACE();
+        glfwInit();
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        mWindow = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+        mViewSize.x = SCR_WIDTH;
+        mViewSize.y = SCR_HEIGHT;
+        if (mWindow == NULL)
+        {
+            LOGD("Failed to create GLFW window");
+            glfwTerminate();
+            return -1;
+        }
+        glfwMakeContextCurrent(mWindow);
+
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+        {
+            LOGD("Failed to initialize GLAD");
+            return -1;
+        }
+        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+        glEnable(GL_DEPTH_TEST);
+        glfwSetFramebufferSizeCallback(mWindow, framebuffer_size_callback);
+        mpShader = make_shared<Shader>(vertexMap[VERTEX_TYPE_THREE].c_str(), fragmentMap[FRAGMENT_TYPE_THREE].c_str());
+        return 0;
+    }
+    int prepareVertexArray()
+    {
+        ZYBK_TRACE();
+        // float vertices[] = {
+        //     //     ---- 位置 ----       ---- 颜色 ----     - 纹理坐标 -
+        //     0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,   // 右上
+        //     0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // 右下
+        //     -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // 左下
+        //     -0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f   // 左上
+        // };
+        // unsigned int indices[] = {
+        //     // 注意索引从0开始!
+        //     // 此例的索引(0,1,2,3)就是顶点数组vertices的下标，
+        //     // 这样可以由下标代表顶点组合成矩形
+
+        //     0, 1, 3, // 第一个三角形
+        //     1, 2, 3  // 第二个三角形
+        // };
+        // unsigned int mIndices[81*3*2];
+        // float mVertices[500];
+        for (int i = 0; i < SCR_GRID_SIZE * SCR_GRID_SIZE; i++)
+        {
+            mVertices[5 * i] = ((i % SCR_GRID_SIZE) / (float)(SCR_BLOCK_SIZE)) * 2 - 1;
+            mVertices[5 * i + 1] = ((i / SCR_GRID_SIZE) / (float)(SCR_BLOCK_SIZE)) * 2 - 1;
+            mVertices[5 * i + 2] = 0.0f;
+            mVertices[5 * i + 3] = ((i % SCR_GRID_SIZE) / (float)(SCR_BLOCK_SIZE));
+            mVertices[5 * i + 4] = (i / SCR_GRID_SIZE) / (float)(SCR_BLOCK_SIZE);
+        }
+        for (int i = 0; i < SCR_GRID_SIZE - 1; i++)
+        {
+            for (int j = 0; j < SCR_GRID_SIZE - 1; j++)
+            {
+                mIndices[6 * ((SCR_GRID_SIZE - 1) * i + j)] = SCR_GRID_SIZE * i + j;
+                mIndices[6 * ((SCR_GRID_SIZE - 1) * i + j) + 1] = SCR_GRID_SIZE * i + j + 1;
+                mIndices[6 * ((SCR_GRID_SIZE - 1) * i + j) + 2] = SCR_GRID_SIZE * i + j + SCR_GRID_SIZE + 1;
+                mIndices[6 * ((SCR_GRID_SIZE - 1) * i + j) + 3] = SCR_GRID_SIZE * i + j;
+                mIndices[6 * ((SCR_GRID_SIZE - 1) * i + j) + 4] = SCR_GRID_SIZE * i + j + SCR_GRID_SIZE + 1;
+                mIndices[6 * ((SCR_GRID_SIZE - 1) * i + j) + 5] = SCR_GRID_SIZE * i + j + SCR_GRID_SIZE;
+            }
+        }
+        return 0;
+    }
+
+    int prepareGlResource()
+    {
+        ZYBK_TRACE();
+
+        glGenVertexArrays(1, &mVAO);
+        glGenBuffers(1, &mVBO);
+        glGenBuffers(1, &mEBO);
+
+        glBindVertexArray(mVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, mVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(mVertices), mVertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(mIndices), mIndices, GL_STATIC_DRAW);
+
+        // 位置属性
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
+        // 颜色属性
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        // 纹理属性
+        // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+        // glEnableVertexAttribArray(2);
+
+        glGenTextures(1, &mTexture);
+        glBindTexture(GL_TEXTURE_2D, mTexture);
+        // 为当前绑定的纹理对象设置环绕、过滤方式
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // 加载并生成纹理
+        int width, height, nrChannels;
+        stbi_set_flip_vertically_on_load(true);
+        unsigned char *data = stbi_load("resources/adwa.jpg", &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        else
+        {
+            LOGD("Failed to load texture");
+        }
+        stbi_image_free(data);
+        mpShader->use();
+        glUniform1i(glGetUniformLocation(mpShader->ID, "ourtexture"), 0); // 手动设置
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindVertexArray(0);
+        return 0;
+    }
+
+    int bufferVertexArray()
+    {
+        ZYBK_TRACE();
+        glBindVertexArray(mVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, mVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(mVertices), mVertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(mIndices), mIndices, GL_STATIC_DRAW);
+
+        // 位置属性
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
+        // 颜色属性
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        // 纹理属性
+        // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+        // glEnableVertexAttribArray(2);
+
+        // glGenTextures(1, &mTexture);
+        // glBindTexture(GL_TEXTURE_2D, mTexture);
+        // // 为当前绑定的纹理对象设置环绕、过滤方式
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // // 加载并生成纹理
+        // int width, height, nrChannels;
+        // unsigned char *data = stbi_load("resources/adwa.jpg", &width, &height, &nrChannels, 0);
+        // if (data)
+        // {
+        //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        //     glGenerateMipmap(GL_TEXTURE_2D);
+        // }
+        // else
+        // {
+        //     LOGD("Failed to load texture");
+        // }
+        // stbi_image_free(data);
+        // mpShader->use();
+        // glUniform1i(glGetUniformLocation(mpShader->ID, "ourtexture"), 0); // 手动设置
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindVertexArray(0);
+        return 0;
+    }
+
+    int renderProcess()
+    {
+        ZYBK_TRACE();
+        // auto mMouseButtonCb = [&](GLFWwindow *window, int button, int action, int mods) -> void
+        // {
+        //     mouseButtonCallback(window, button, action, mods);
+        // };
+        // auto mouseButtonCb = std::bind(mouseButtonCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+        glfwSetMouseButtonCallback(mWindow, &mouseButtonCallback);
+        while (!glfwWindowShouldClose(mWindow))
+        {
+            processInput(mWindow);
+            {
+                std::unique_lock<std::mutex> lock(mMutex);
+                for (int i = 0; i < mSelectedCursorPos.size() / 2; i++)
+                {
+                    int indexI, indexJ;
+                    indexI = round(mSelectedCursorPos[2 * i].x * SCR_BLOCK_SIZE);
+                    indexJ = round(mSelectedCursorPos[2 * i].y * SCR_BLOCK_SIZE);
+                    double textI, textJ;
+                    // textI = round(temp[2 * i].x * 10);
+                    // textJ = round(temp[2 * i].y * 10);
+                    textI = mSelectedCursorPos[2 * i + 1].x - mSelectedCursorPos[2 * i].x;
+                    textJ = mSelectedCursorPos[2 * i + 1].y - mSelectedCursorPos[2 * i].y;
+                    textI = textI > 0.02 ? 0.02 : textI;
+                    textI = textI < -0.02 ? -0.02 : textI;
+                    textJ = textJ > 0.02 ? 0.02 : textJ;
+                    textJ = textJ < -0.02 ? -0.02 : textJ;
+                    mVertices[(indexJ * SCR_GRID_SIZE + indexI) * 5 + 3] -= textI;
+                    mVertices[(indexJ * SCR_GRID_SIZE + indexI) * 5 + 4] -= textJ;
+                    // mVertices[(5 * 10 + 5)*5 + 3] += mKeyInputMap[GLFW_KEY_LEFT] / 10.0;
+                    // mVertices[(5 * 10 + 5)*5 + 4] += mKeyInputMap[GLFW_KEY_UP] / 10.0;
+                    // LOGD("offset x %f y %f",  mKeyInputMap[GLFW_KEY_LEFT] / 10.0, mKeyInputMap[GLFW_KEY_UP] / 10.0);
+                    LOGD("offset x %f y %f", textI, textJ);
+                    mSelectedCursorPos.clear();
+                }
+            }
+            bufferVertexArray();
+            glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glActiveTexture(GL_TEXTURE0); // 在绑定纹理之前先激活纹理单元
+            glBindTexture(GL_TEXTURE_2D, mTexture);
+
+            mpShader->use();
+            glBindVertexArray(mVAO);
+            float timeValue = glfwGetTime();
+            float greenValue = (sin(timeValue) / 2.0f) + 0.0f;
+            glm::vec3 cubePositions[] = {
+                glm::vec3(0.0f, 0.0f, 0.0f),
+                glm::vec3(2.0f, 5.0f, -15.0f),
+                glm::vec3(-1.5f, -2.2f, -2.5f),
+                glm::vec3(-3.8f, -2.0f, -12.3f),
+                glm::vec3(2.4f, -0.4f, -3.5f),
+                glm::vec3(-1.7f, 3.0f, -7.5f),
+                glm::vec3(1.3f, -2.0f, -2.5f),
+                glm::vec3(1.5f, 2.0f, -2.5f),
+                glm::vec3(1.5f, 0.2f, -1.5f),
+                glm::vec3(-1.3f, 1.0f, -1.5f)};
+            for (int i = 0; i < 1; i++)
+            {
+                // glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+                // 译注：下面就是矩阵初始化的一个例子，如果使用的是0.9.9及以上版本
+                // 下面这行代码就需要改为:
+                // glm::mat4 trans = glm::mat4(1.0f)
+                // 之后将不再进行提示
+                glm::mat4 trans = glm::mat4(1.0f);
+                trans = glm::translate(trans, glm::vec3(mKeyInputMap[GLFW_KEY_LEFT], mKeyInputMap[GLFW_KEY_UP], mKeyInputMap[GLFW_KEY_Q]) + cubePositions[i]);
+                // trans = glm::rotate(trans, glm::radians(-180.0f), glm::vec3(0, 0, 1));
+                // trans = glm::rotate(trans, glm::radians((float)mCursorPos.y), glm::vec3(1, 0, 0));
+                glm::mat4 perspective = glm::mat4(1.0f);
+                // perspective = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
+                glm::mat4 view = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+                // float radius = 10.0f;
+                // float camX = static_cast<float>(sin(glfwGetTime()) * radius);
+                // float camZ = static_cast<float>(cos(glfwGetTime()) * radius);
+                // view = glm::lookAt(glm::vec3(camX, 0.0f, camZ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                // vec = trans * vec;
+                // trans = glm::rotate(trans, glm::radians(mCursorPos.x), glm::vec3(mKeyInputMap[GLFW_KEY_UP], mKeyInputMap[GLFW_KEY_LEFT], 0.0f));
+
+                glUniform4f(glGetUniformLocation(mpShader->ID, "inputD"), mKeyInputMap[GLFW_KEY_UP], mKeyInputMap[GLFW_KEY_LEFT], greenValue, 1);
+                // glUniform4f(glGetUniformLocation(mpShader->ID, "inputR"), mCursorPos.x, mCursorPos.y, 1, 1);
+                unsigned int transformLoc = glGetUniformLocation(mpShader->ID, "transform");
+                glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+                unsigned int perspectiveLoc = glGetUniformLocation(mpShader->ID, "perspective");
+                glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(perspective));
+                unsigned int viewLoc = glGetUniformLocation(mpShader->ID, "view");
+                glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+                glDrawElements(GL_TRIANGLES, SCR_BLOCK_SIZE * SCR_BLOCK_SIZE * 3 * 2, GL_UNSIGNED_INT, 0);
+                // glDrawArrays(GL_TRIANGLES, 0, 36);
+                // LOGD("print x %f y %f  rx %f ry %f", mKeyInputMap[GLFW_KEY_LEFT], mKeyInputMap[GLFW_KEY_UP], mCursorPos.x, mCursorPos.y);
+            }
+
+            glfwSwapBuffers(mWindow);
+            glfwPollEvents();
+        }
+
+        glDeleteVertexArrays(1, &mVAO);
+        glDeleteBuffers(1, &mVBO);
+        glDeleteBuffers(1, &mEBO);
+        glfwTerminate();
+        LOGD("glfwInit!!!");
+        return 0;
+    }
+
+    void processInput(GLFWwindow *window)
+    {
+        ZYBK_TRACE();
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        {
+            glfwSetWindowShouldClose(window, true);
+        }
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        {
+            mKeyInputMap[GLFW_KEY_UP] += 0.01f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        {
+            mKeyInputMap[GLFW_KEY_UP] -= 0.01f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        {
+            mKeyInputMap[GLFW_KEY_LEFT] -= 0.01f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        {
+            mKeyInputMap[GLFW_KEY_LEFT] += 0.01f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        {
+            mKeyInputMap[GLFW_KEY_Q] += 0.01f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        {
+            mKeyInputMap[GLFW_KEY_Q] -= 0.01f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+        {
+            mKeyInputMap[GLFW_KEY_Q] -= 0.01f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_PAUSE) == GLFW_PRESS)
+        {
+            for (auto itr : mKeyInputMap)
+            {
+                itr.second = 0;
+            }
+        }
+        glfwGetCursorPos(window, &mCursorPos.x, &mCursorPos.y);
+    }
+    static void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+    {
+        ZYBK_TRACE();
+        glViewport(0, 0, width, height);
+        mViewSize.x = width;
+        mViewSize.y = height;
+        LOGD("glViewport width %d , height %d", width, height);
+    }
+
+    static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
+    {
+        ZYBK_TRACE();
+        std::unique_lock<std::mutex> lock(mMutex);
+        switch (button)
+        {
+        case GLFW_MOUSE_BUTTON_LEFT:
+            if (action == GLFW_RELEASE)
+            {
+                Pos pos;
+                glfwGetCursorPos(window, &pos.x, &pos.y);
+                pos.x = pos.x / mViewSize.x;
+                pos.y = pos.y / mViewSize.y;
+                pos.y = 1.0 - pos.y;
+                mSelectedCursorPos.push_back(pos);
+                LOGD("mouseButtonCallback posx %f , posy %f", pos.x, pos.y);
+            }
+            else
+            {
+                Pos pos;
+                glfwGetCursorPos(window, &pos.x, &pos.y);
+                pos.x = pos.x / mViewSize.x;
+                pos.y = pos.y / mViewSize.y;
+                pos.y = 1.0 - pos.y;
+                mSelectedCursorPos.push_back(pos);
+                LOGD("mouseButtonCallback posx %f , posy %f", pos.x, pos.y);
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
+
+private:
+    std::shared_ptr<Shader> mpShader;
+    std::unordered_map<int, float> mKeyInputMap;
+    GLFWwindow *mWindow;
+    Pos mCursorPos;
+    static std::mutex mMutex;
+    static std::vector<Pos> mSelectedCursorPos;
+    static Pos mViewSize;
+    unsigned int mVAO;
+    unsigned int mVBO;
+    unsigned int mEBO;
+    unsigned int mTexture;
+    unsigned int mIndices[SCR_BLOCK_SIZE * SCR_BLOCK_SIZE * 3 * 2];
+    float mVertices[SCR_GRID_SIZE * SCR_GRID_SIZE * 5];
+};
+std::mutex GLRenderprocessor::mMutex;
+std::vector<Pos> GLRenderprocessor::mSelectedCursorPos;
+Pos GLRenderprocessor::mViewSize;
 
 int opengl()
 {
     ZYBK_TRACE();
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow *window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
-    {
-        LOGD("Failed to create GLFW window");
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-    glViewport(0, 0, 800, 600);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    // unsigned int vertexShader;
-    // vertexShader = glCreateShader(GL_VERTEX_SHADER);
-
-    // glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    // glCompileShader(vertexShader);
-    // int success;
-    // char infoLog[512];
-    // glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    // if (!success)
-    // {
-    //     glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-    //     LOGD("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s", infoLog);
-    // }
-
-    // unsigned int fragmentShader;
-    // fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    // glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    // glCompileShader(fragmentShader);
-
-    // unsigned int shaderProgram;
-    // shaderProgram = glCreateProgram();
-    // glAttachShader(shaderProgram, vertexShader);
-    // glAttachShader(shaderProgram, fragmentShader);
-    // glLinkProgram(shaderProgram);
-
-    // glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    // if (!success)
-    // {
-    //     glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-    //     LOGD("ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n%s", infoLog);
-    // }
-
-    // glUseProgram(shaderProgram);
-
-    // glDeleteShader(vertexShader);
-    // glDeleteShader(fragmentShader);
-
-    // float vertices[] = {
-    //     -0.5f, -0.5f, 0.0f,
-    //     0.5f, -0.5f, 0.0f,
-    //     0.0f,  0.5f, 0.0f
-    // };
-    //     float vertices[] = {
-    //     // 第一个三角形
-    //     0.5f, 0.5f, 0.0f,   // 右上角
-    //     0.5f, -0.5f, 0.0f,  // 右下角
-    //     -0.5f, 0.5f, 0.0f,  // 左上角
-    //     // 第二个三角形
-    //     0.5f, -0.5f, 0.0f,  // 右下角
-    //     -0.5f, -0.5f, 0.0f, // 左下角
-    //     -0.5f, 0.5f, 0.0f   // 左上角
-    // };
-    // float vertices[] = {
-    //     0.5f, 0.5f, 0.0f,   // 右上角
-    //     0.5f, -0.5f, 0.0f,  // 右下角
-    //     -0.5f, -0.5f, 0.0f, // 左下角
-    //     -0.5f, 0.5f, 0.0f   // 左上角
-    // };
-    float vertices[] = {
-    // 位置              // 颜色
-     0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
-    -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
-     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // 顶部
-    };
-
-    // unsigned int indices[] = {
-    //     // 注意索引从0开始!
-    //     // 此例的索引(0,1,2,3)就是顶点数组vertices的下标，
-    //     // 这样可以由下标代表顶点组合成矩形
-
-    //     0, 1, 3, // 第一个三角形
-    //     1, 2, 3  // 第二个三角形
-    // };
-<<<<<<< HEAD
-=======
-    Shader shader(vertexMap[VERTEX_TYPE_ONE].c_str(), fragmentMap[FRAGMENT_TYPE_ONE].c_str());
->>>>>>> 89d3eb7 (threadpool destroy on process end)
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // 位置属性
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // 颜色属性
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
-    glEnableVertexAttribArray(1);
-    // unsigned int EBO;
-    // glGenBuffers(1, &EBO);
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glBindVertexArray(0);
-
-    while (!glfwWindowShouldClose(window))
-    {
-        processInput(window);
-
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-<<<<<<< HEAD
-        glUseProgram(shaderProgram);
-=======
-        shader.use();
-        // glUseProgram(shaderProgram);
->>>>>>> 89d3eb7 (threadpool destroy on process end)
-        glBindVertexArray(VAO);
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        // float timeValue = glfwGetTime();
-        // float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-        // int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-<<<<<<< HEAD
-        glUseProgram(shaderProgram);
-=======
-        // glUseProgram(shaderProgram);
->>>>>>> 89d3eb7 (threadpool destroy on process end)
-        // glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        // glDrawArrays(GL_TRIANGLES, 3, 3);
-        // glDrawArrays(GL_TRIANGLES, 1, 3);
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-    glfwTerminate();
-    LOGD("glfwInit!!!");
+    GLRenderprocessor processor;
+    processor.setUpGlEnv();
+    processor.prepareVertexArray();
+    processor.prepareGlResource();
+    processor.renderProcess();
+    LOGD("opengl finished!!!");
     return 0;
 }

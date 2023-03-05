@@ -13,12 +13,16 @@ enum VertexType : int
 {
     VERTEX_TYPE_NONE,
     VERTEX_TYPE_ONE,
+    VERTEX_TYPE_TWO,
+    VERTEX_TYPE_THREE,
     VERTEX_TYPE_MAX,
 };
 enum FragmentType : int
 {
     FRAGMENT_TYPE_NONE,
     FRAGMENT_TYPE_ONE,
+    FRAGMENT_TYPE_TWO,
+    FRAGMENT_TYPE_THREE,
     FRAGMENT_TYPE_MAX,
 };
 

@@ -5,7 +5,8 @@ include(CTest)
 enable_testing()
 
 add_definitions(-DDUMPPATH="D:\\\\repo\\\\MyLeetCode\\\\backtrace.txt")
-add_definitions(-DDEBUG_ENABLE=1)
+add_definitions(-DDEBUG_ENABLE=0)
+# add_definitions(-DCMAKE_BUILD_TYPE=Debug)
 
 set(OUTPATH ${PROJECT_SOURCE_DIR})
 set(LIBRARY_OUTPUT_PATH ${OUTPATH}/libs)
@@ -33,6 +34,10 @@ add_subdirectory(./opengl)
 
 link_libraries(zybk.util)
 link_libraries(zybk.opengl)
+
+# link_libraries(dbghelp.dll)
+
+# link_libraries(SegFault)
 
 add_executable(VSCode main.cpp )
 # add_compile_definitions(DUMPPATH ${PROJECT_SOURCE_DIR})

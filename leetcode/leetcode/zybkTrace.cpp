@@ -1,10 +1,57 @@
 #include "zybkTrace.h"
 #include "ThreadPool.h"
+#include <dbghelp.h>
 #include <fstream>
 #include <map>
 #include <stack>
 #include <string>
 #include <windows.h>
+
+/**
+ *  @brief  call winAPI to dump register. memory and call stack info.
+ *  @param  *ExceptionInfo
+ *  call winAPI to dump register. memory and call stack info.
+ *  however, cmake can't produce pdb file windgb tool required,
+ *  just leave it alone
+ */
+// void minidump(struct _EXCEPTION_POINTERS *ExceptionInfo)
+// {
+//     CONTEXT c;
+
+//     memset(&c, 0, sizeof(c));
+
+//     GetThreadContext( GetCurrentThread(), &c );
+
+//     EXCEPTION_POINTERS ep;
+
+//     ep.ContextRecord = &c;
+//     ep.ExceptionRecord = ExceptionInfo->ExceptionRecord;
+//     // Open the file
+//     char path[1000];
+//     _getcwd(path, 1000);
+//     sprintf(path, "%s/MiniDump.txt", path);
+//     HANDLE hFile = CreateFile(path, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+//     if ((hFile != NULL) && (hFile != INVALID_HANDLE_VALUE))
+//     {
+//         // Create the minidump
+
+//         MINIDUMP_EXCEPTION_INFORMATION mdei;
+
+//         mdei.ThreadId = GetCurrentThreadId();
+//         mdei.ExceptionPointers = &ep;
+//         mdei.ClientPointers = FALSE;
+
+//         MINIDUMP_TYPE mdt = MiniDumpNormal;
+
+//         BOOL rv = MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
+//                                     hFile, mdt, &mdei, 0, 0);
+
+//         // Close the file
+
+//         CloseHandle(hFile);
+//     }
+// }
 
 LONG WINAPI __declspec(dllexport) MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
@@ -93,5 +140,5 @@ TraceWrapper::~TraceWrapper()
                                                  "unstackTrace", THREAD_TYPE_TRACE, (unsigned int)GetCurrentThreadId());
     if (postStatus.second == threadStatus::THREAD_SUBMIT)
         postStatus.first.get();
-            LOG_DEBUG("unstackTraces");
+    LOG_DEBUG("unstackTraces");
 }
