@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.0.0)
 project(openGL VERSION 0.1.0)
 
 include_directories(./include)
-#include_directories(./include/GLFW)
-#include_directories(./include/KHR)
 
-#add_library(glfw3.dll SHARED .lib/glfw3.dll)
+SET(linkLib libopencv_core460.dll libopencv_imgcodecs460.dll libopencv_imgproc460.dll libopencv_objdetect460.dll libopencv_photo460.dll libopencv_highgui460.dll)
+# SET(linkSLib libopencv_core460.dll.a libopencv_imgcodecs460.dll.a libopencv_imgproc460.dll.a libopencv_objdetect460.dll.a libopencv_photo460.dll.a libopencv_highgui460.dll.a)
+link_libraries(${linkLib})
 link_libraries(zybk.util)
 link_libraries(glfw3.dll)
 link_libraries(libglad.a)

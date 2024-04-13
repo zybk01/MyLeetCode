@@ -12,5 +12,8 @@ uniform mat4 transform;
 void main()
 {
     // FragColor = texture(ourTexture, TexCoord) * vec4(ourColor, 1.0 * inputD.x);
-    FragColor = texture(ourTexture, TexCoord);
+   vec4 texture1 = texture(ourTexture, TexCoord);
+    vec4 texture2 = texture(ourTexture, TexCoord + vec2(0.002 , 0));
+    //FragColor = texture(ourTexture, TexCoord);
+    FragColor = vec4( texture2.x, texture1.y, texture1.z, texture2.a);
 }

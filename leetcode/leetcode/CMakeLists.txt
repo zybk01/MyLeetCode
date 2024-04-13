@@ -12,13 +12,14 @@ set(CMAKE_CXX_FLAGS "-O0")
 endif(${BUILD_LOG})
 
 link_libraries(zybk.util)
+link_libraries(zybk.tressofinfiniteSouls)
 
 if(${BUILD_LEETCODE})
-   
-    #set(LIBRARY_OUTPUT_DIRECTORY ${OUTPATH})
-    add_executable(LeetCode leetcode.cpp)
-   # target_link_libraries(VSCode test11)
-    message("BUILDING_LEETCODE_DONE: "${BUILD_LEETCODE})
+
+#set(LIBRARY_OUTPUT_DIRECTORY ${OUTPATH})
+add_executable(LeetCode leetcode.cpp)
+# target_link_libraries(VSCode test11)
+message("BUILDING_LEETCODE_DONE: "${BUILD_LEETCODE})
 endif()
 
 
@@ -57,6 +58,10 @@ endif(${BUILD_ALGO_PERMUTE})
 if(${BUILD_ALGO_KMP})
 add_library(zybk.kmp  SHARED kmp.cpp)
 endif(${BUILD_ALGO_KMP})
+
+if(${BUILD_ALGO_TREE_OF_INFINITESOULS})
+add_library(zybk.tressofinfiniteSouls  SHARED treeOfInfiniteSouls.cpp)
+endif(${BUILD_ALGO_TREE_OF_INFINITESOULS})
 
 add_library(test11 STATIC test.cpp)
 # add_library(zybk.util STATIC ThreadPool.cpp)

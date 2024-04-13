@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/leetcode/leetcode/**",
                 "${workspaceFolder}/leetcode/leetcode",
-                "${workspaceFolder}/leetcode/leetcode"
+                "${workspaceFolder}/leetcode/leetcode",
+                "D:/Program Files (x86)/Coding/openCV/opencv/build/include/"
             ],
             "defines": [
                 "_DEBUG",

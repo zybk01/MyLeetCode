@@ -18,7 +18,10 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "stb_image.h"
+#include "opencv2/opencv.hpp"
+#include "opencv2/highgui.hpp"
 
+#define modelPath "D:\\repo\\MyLeetCode\\face_detection_yunet_2022mar.onnx"
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 800
 #define SCR_BLOCK_SIZE (10)
@@ -266,7 +269,7 @@ public:
                 glm::vec3(1.5f, 2.0f, -2.5f),
                 glm::vec3(1.5f, 0.2f, -1.5f),
                 glm::vec3(-1.3f, 1.0f, -1.5f)};
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 10; i++)
             {
                 // glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
                 // 译注：下面就是矩阵初始化的一个例子，如果使用的是0.9.9及以上版本
@@ -276,15 +279,15 @@ public:
                 glm::mat4 trans = glm::mat4(1.0f);
                 trans = glm::translate(trans, glm::vec3(mKeyInputMap[GLFW_KEY_LEFT], mKeyInputMap[GLFW_KEY_UP], mKeyInputMap[GLFW_KEY_Q]) + cubePositions[i]);
                 // trans = glm::rotate(trans, glm::radians(-180.0f), glm::vec3(0, 0, 1));
-                // trans = glm::rotate(trans, glm::radians((float)mCursorPos.y), glm::vec3(1, 0, 0));
+                trans = glm::rotate(trans, glm::radians((float)mCursorPos.y), glm::vec3(1, 0, 0));
                 glm::mat4 perspective = glm::mat4(1.0f);
-                // perspective = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+                perspective = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
                 glm::mat4 view = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-                // float radius = 10.0f;
-                // float camX = static_cast<float>(sin(glfwGetTime()) * radius);
-                // float camZ = static_cast<float>(cos(glfwGetTime()) * radius);
-                // view = glm::lookAt(glm::vec3(camX, 0.0f, camZ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                float radius = 10.0f;
+                float camX = static_cast<float>(sin(glfwGetTime()) * radius);
+                float camZ = static_cast<float>(cos(glfwGetTime()) * radius);
+                view = glm::lookAt(glm::vec3(camX, 0.0f, camZ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
                 // vec = trans * vec;
                 // trans = glm::rotate(trans, glm::radians(mCursorPos.x), glm::vec3(mKeyInputMap[GLFW_KEY_UP], mKeyInputMap[GLFW_KEY_LEFT], 0.0f));
 
@@ -419,14 +422,119 @@ std::mutex GLRenderprocessor::mMutex;
 std::vector<Pos> GLRenderprocessor::mSelectedCursorPos;
 Pos GLRenderprocessor::mViewSize;
 
+cv::Mat visualize(const cv::Mat& image, const cv::Mat& faces, float fps = -1.f)
+{
+    static cv::Scalar box_color{0, 255, 0};
+    static std::vector<cv::Scalar> landmark_color{
+        cv::Scalar(255,   0,   0), // right eye
+        cv::Scalar(  0,   0, 255), // left eye
+        cv::Scalar(  0, 255,   0), // nose tip
+        cv::Scalar(255,   0, 255), // right mouth corner
+        cv::Scalar(  0, 255, 255)  // left mouth corner
+    };
+    static cv::Scalar text_color{0, 255, 0};
+
+    auto output_image = image.clone();
+
+    if (fps >= 0)
+    {
+        cv::putText(output_image, cv::format("FPS: %.2f", fps), cv::Point(0, 15), cv::FONT_HERSHEY_SIMPLEX, 0.5, text_color, 2);
+    }
+
+    for (int i = 0; i < faces.rows; ++i)
+    {
+        // Draw bounding boxes
+        int x1 = static_cast<int>(faces.at<float>(i, 0));
+        int y1 = static_cast<int>(faces.at<float>(i, 1));
+        int w = static_cast<int>(faces.at<float>(i, 2));
+        int h = static_cast<int>(faces.at<float>(i, 3));
+        cv::rectangle(output_image, cv::Rect(x1, y1, w, h), box_color, 2);
+
+        // Confidence as text
+        float conf = faces.at<float>(i, 14);
+        cv::putText(output_image, cv::format("%.4f", conf), cv::Point(x1, y1+12), cv::FONT_HERSHEY_DUPLEX, 0.5, text_color);
+
+        // Draw landmarks
+        for (int j = 0; j < landmark_color.size(); ++j)
+        {
+            int x = static_cast<int>(faces.at<float>(i, 2*j+4)), y = static_cast<int>(faces.at<float>(i, 2*j+5));
+            cv::circle(output_image, cv::Point(x, y), 2, landmark_color[j], 2);
+        }
+    }
+    return output_image;
+}
+
 int opengl()
 {
     ZYBK_TRACE();
-    GLRenderprocessor processor;
-    processor.setUpGlEnv();
-    processor.prepareVertexArray();
-    processor.prepareGlResource();
-    processor.renderProcess();
+    cv::Mat image = cv::imread("resources/adwa.jpg");
+    cv::Mat simage;
+    cv::Mat faces;
+    cv::imshow("adad", image);
+    cv::resize(image, simage, cv::Size(128, 128));
+    cv::imshow("aaa", simage);
+    cv::Mat scaleMat = (cv::Mat_<float>(2,2) << 3, 0, 0, 3);
+    cv::Mat scaleMatInv = scaleMat.inv();
+    LOGD("invMat %f %f %f %f", scaleMatInv.at<float>(0, 0), scaleMatInv.at<float>(0, 1), scaleMatInv.at<float>(1, 0), scaleMatInv.at<float>(1, 1));
+    cv::print(scaleMatInv);
+    cv::Mat grayimage;
+    image = simage;
+    cv::cvtColor(image, grayimage, cv::COLOR_RGB2GRAY);
+    cv::imshow("aa4a", grayimage);
+    cv::Mat scaleGrayMat = (cv::Mat_<uchar>(image.cols * 3, image.rows * 3));
+    // cv::Mat resMat(image.cols * 3, image.rows * 3);
+    std::shared_ptr<uchar> resImag = std::shared_ptr<uchar>(new uchar[image.cols * 3* image.rows * 3]);
+    int resCols = image.cols *3;
+    int resRows = image.rows *3;
+    
+    LOGD("opengl finished!!!");
+    for (int i = 0; i < resCols - 6; i++) {
+        for (int j = 0; j < resRows - 6; j ++) {
+            float srcX = (i + 0.5) * 0.3333 - 0.5;
+            float srcY = (j + 0.5) * 0.3333 - 0.5;
+            float u = 1.0 + srcX - round(srcX);
+            float v = 1.0 + srcY - round(srcY);
+            int srcI = int(ceil(srcX + 0.5)) - 1;
+            int srcJ = int(ceil(srcY + 0.5)) - 1;
+            srcI = srcI > (image.cols - 2) ? image.cols - 2 : srcI;
+            srcJ = srcJ > (image.rows - 2) ? image.rows - 2 : srcJ;
+            // LOGD("opengl finished!!! %d %d", srcI,srcJ);
+            // resImag.get()[j * resCols + i] = (1 - u) * (1 - v) * grayimage.at<uchar>(srcI, srcJ) + (1 - u) * (v)*grayimage.at<uchar>(srcI, srcJ + 1) + (u) * (1 - v) * grayimage.at<uchar>(srcI + 1, srcJ) + (u) * (v)*grayimage.at<uchar>(srcI + 1, srcJ + 1);
+            scaleGrayMat.data[j * resCols + i] = (1 - u) * (1 - v) * grayimage.at<uchar>(srcI, srcJ) + (1 - u) * (v)*grayimage.at<uchar>(srcI, srcJ + 1) + (u) * (1 - v) * grayimage.at<uchar>(srcI + 1, srcJ) + (u) * (v)*grayimage.at<uchar>(srcI + 1, srcJ + 1);
+        }
+    }
+    LOGD("opengl finished!!!");
+    cv::namedWindow("a3aa",cv::WINDOW_AUTOSIZE);
+    cv::resizeWindow("a3aa",image.cols * 3, image.rows * 3);
+    cv::imshow("a3aa", scaleGrayMat);
+    while (1)
+    {
+        cv::waitKey(0);
+        /* code */
+    };
+
+    // cv::Ptr<cv::FaceDetectorYN> facedetector = cv::FaceDetectorYN::create(modelPath, "", simage.size());
+
+    // facedetector->detect(simage, faces);
+    // LOGD("face size %d %d", faces.size().width, faces.size().width);
+    // LOGD("face raw %d %d", faces.rows, faces.cols);
+    // for (int i = 0; i < faces.rows; ++i)
+    // {
+    //     int x1 = static_cast<int>(faces.at<float>(i, 0));
+    //     int y1 = static_cast<int>(faces.at<float>(i, 1));
+    //     int w = static_cast<int>(faces.at<float>(i, 2));
+    //     int h = static_cast<int>(faces.at<float>(i, 3));
+    //     float conf = faces.at<float>(i, 14);
+    //     LOGD("%d: x1=%d, y1=%d, w=%d, h=%d, conf=%.4f\n", i, x1, y1, w, h, conf);
+    // }
+
+    // cv::imshow("aaaa", visualize(simage, faces));
+
+    // GLRenderprocessor processor;
+    // processor.setUpGlEnv();
+    // processor.prepareVertexArray();
+    // processor.prepareGlResource();
+    // processor.renderProcess();
     LOGD("opengl finished!!!");
     return 0;
 }
