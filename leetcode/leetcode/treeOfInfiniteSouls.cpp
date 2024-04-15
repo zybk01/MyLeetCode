@@ -14,97 +14,95 @@ int SolutiontreeOfInfiniteSouls::treeOfInfiniteSouls(vector<int> &gem, int p, in
     int num = 0;
     vector<int> GemInfo(gem.size(), 0);
     vector<int> outGem;
+    treeOfInfiniteSouls(gem, 0, gem.size(), mResThisTree);
     recursiveGem(gem, 0, num, GemInfo, outGem);
-    // int finished = 1;
-    // vector<int> iterrateCnt;
-    // iterrateCnt.resize(gem.size(), 0);
-    // int incremented = 0;
-    // do
-    // {
-    //     incremented = 0;
-    //     int newIdx = 0;
-    //     int lastIdx = 0;
-    //     vector<int> newgem(gem.size());
-    //     for (int i = 0; i < gem.size(); i++)
-    //     {
-    //         newgem[i] = gem[iterrateCnt[i]];
-    //         if (incremented == 0 && (iterrateCnt[i] < gem.size() - 1 - i))
-    //         {
-    //             iterrateCnt[i]++;
-    //             incremented = 1;
-    //             lastIdx = i;
-    //         }
-    //         if (incremented == 1 && iterrateCnt[i] == 0)
-    //         {
-    //             if (iterrateCnt[lastIdx] == newIdx + 1)
-    //                 newIdx++;
-    //             newgem[i] = gem[newIdx];
-    //             newIdx++;
-    //         }
-    //         LOGD("newgem %d : %d", i, newgem[i]);
-    //     }
-    //     vector<int> resThisTree;
-    //     resThisTree.push_back(0);
-    //     treeOfInfiniteSouls(newgem, 0, newgem.size(), resThisTree);
-    //     for (auto res : resThisTree)
-    //     {
-    //         LOGD("res %lld", res);
-    //         if (res % p == target)
-    //         {
-    //             num++;
-    //         }
-    //     }
-    // } while (incremented);
     return num;
 }
 
 int SolutiontreeOfInfiniteSouls::treeOfInfiniteSouls(vector<int> &gem, int idxS, int idxE,
-                                                     vector<int> &result)
+                                                     vector<string> &result)
 {
-    vector<int> resThisTree;
-    vector<int> resThisLoop;
-    for (auto &inNum : result)
+    vector<string> resThisTree;
+    vector<string> resThisLoop;
+    if (result.size() == 0)
     {
-        inNum = (Numcompound(inNum, 1));
+        result.push_back("1");
         if (idxS + 1 == idxE)
         {
-            inNum = Numcompound(inNum, gem[idxS]);
-            resThisLoop.push_back(inNum);
+            // inNum = Numcompound(inNum, gem[idxS]);
+            // result[0] = result[0] + to_string(gem[idxS]);
+            result[0] = result[0] + "?";
+            resThisLoop.push_back(result[0]);
+        }
+    }
+    else
+    {
+        for (auto &inNum : result)
+        {
+            // inNum = (Numcompound(inNum, 1));
+            inNum = inNum + "1";
+            if (idxS + 1 == idxE)
+            {
+                // inNum = Numcompound(inNum, gem[idxS]);
+                // inNum = inNum + to_string(gem[idxS]);
+                inNum = inNum + "?";
+                resThisLoop.push_back(inNum);
+            }
         }
     }
 
-    for (int i = idxS + 1; i < idxE; i++)
+    for (long long i = idxS + 1; i < idxE; i++)
     {
-        vector<int> res;
-        res = result;
+        vector<string> res;
+        vector<string> trans;
+        resThisTree.clear();
+        // res.push_back("0");
         treeOfInfiniteSouls(gem, idxS, i, res);
+        for (auto &inNum : result)
+        {
+            for (auto resNum : res)
+            {
+                // long long thisRee = Numcompound(inNum, resNum);
+                string thisRee = inNum + resNum;
+                // LOGD("inNum %lld", thisRee);
+                resThisTree.push_back(thisRee);
+            }
+        }
+        trans = resThisTree;
+        resThisTree.clear();
+        res.clear();
+        // res.push_back("0");
         treeOfInfiniteSouls(gem, i, idxE, res);
-        resThisLoop.insert(resThisLoop.end(), res.begin(), res.end());
+        for (auto &inNum : trans)
+        {
+            for (auto resNum : res)
+            {
+                // long long thisRee = Numcompound(inNum, resNum);
+                // LOGD("outNum %lld", thisRee);
+
+                string thisRee = inNum + resNum;
+                resThisTree.push_back(thisRee);
+            }
+        }
+        resThisLoop.insert(resThisLoop.end(), resThisTree.begin(), resThisTree.end());
     }
     for (auto &resNum : resThisLoop)
     {
-        // for (auto inNum : result)
-        // {
-        //     long long thisRee = Numcompound(inNum, resNum);
-        //     thisRee = Numcompound(thisRee, 9);
-        //     // inNum = inNum % mP;
-        //     resThisTree.push_back(thisRee);
-        //     // LOGD("inNum %lld", inNum);
-        // }
-        resNum = Numcompound(resNum, 9);
+        // resNum = Numcompound(resNum, 9);
+        resNum = resNum + "9";
     }
     result = resThisLoop;
     return 0;
 }
 
-int SolutiontreeOfInfiniteSouls::Numcompound(int ori, int num)
+long long SolutiontreeOfInfiniteSouls::Numcompound(long long ori, long long num)
 {
-    int temp = num;
+    long long temp = num;
     ori = ori % mP;
     num = num % mP;
-    int compountd = (ori * 10);
+    long long compountd = (ori * 10);
     compountd = compountd % mP;
-    while (temp > 10)
+    while (temp >= 10)
     {
         temp = temp / 10;
         compountd = (compountd * 10);
@@ -118,20 +116,50 @@ void SolutiontreeOfInfiniteSouls::recursiveGem(vector<int> &gem, int idx, int &n
 {
     if (idx == gem.size())
     {
-        vector<int> resThisTree;
-        resThisTree.push_back(0);
-        for (int i = 0; i < gem.size(); i++)
+        vector<string> resThisTree;
+        // resThisTree.push_back(0);
+        // resThisTree.push_back("0");
+        // treeOfInfiniteSouls(outGem, 0, outGem.size(), resThisTree);
+        int treeNum = 0;
+        for (auto res : mResThisTree)
         {
-            LOGD("gem %d", outGem[i]);
-        }
-        treeOfInfiniteSouls(outGem, 0, outGem.size(), resThisTree);
-        for (auto res : resThisTree)
-        {
-            LOGD("res %lld", res);
-            if (res % mP == mTarget)
+            LOGD("%s", res.c_str());
+            long long resInt = 0;
+            int j = 0;
+            int i = 0;
+            if (cacheMap.begin() != cacheMap.end())
+            // if (cacheMap.begin() != cacheMap.end())
+            {
+                auto treeItr = cacheMap.rbegin();
+                if (treeItr->second.count(treeNum))
+                {
+                    resInt = treeItr->second[treeNum];
+                    j = treeItr->first;
+                    // i = treeItr->second[treeNum];
+                    i = cacheIdxMap[j][treeNum];
+                }
+            }
+            for (; i < res.size(); i++)
+            {
+                if (res[i] == '?')
+                {
+                    cacheMap[j][treeNum] = resInt;
+                    cacheIdxMap[j][treeNum] = i;
+                    resInt = Numcompound(resInt, outGem[j]);
+                    // resInt = (resInt *10 + gem[j]) % mP;
+                    j++;
+                    LOGD("%c %d treeNum %d", res[i], j, treeNum);
+                }
+                else
+                {
+                    resInt = (resInt * 10 + res[i] - '0') % mP;
+                }
+            }
+            if (resInt % mP == mTarget)
             {
                 num++;
             }
+            treeNum++;
         }
     }
     for (int i = 0; i < gem.size(); i++)
@@ -141,6 +169,8 @@ void SolutiontreeOfInfiniteSouls::recursiveGem(vector<int> &gem, int idx, int &n
             outGem.push_back(gem[i]);
             GemInfo[i] = 1;
             recursiveGem(gem, idx + 1, num, GemInfo, outGem);
+            cacheMap.erase(idx);
+            cacheIdxMap.erase(idx);
             GemInfo[i] = 0;
             outGem.pop_back();
         }

@@ -1,6 +1,7 @@
 // #include"stdafx.h"
 #include <algorithm>
 #include <unordered_map>
+#include <map>
 #include <vector>
 
 using namespace std;
@@ -17,11 +18,14 @@ class SolutiontreeOfInfiniteSouls
 public:
     int treeOfInfiniteSouls(vector<int> &gem, int p, int target);
     int treeOfInfiniteSouls(vector<int> &gem, int idxS, int idxE,
-                            vector<int> &result);
-    int Numcompound(int ori, int num);
+                            vector<string> &result);
+    long long Numcompound(long long ori, long long num);
     void recursiveGem(vector<int> &gem, int idx, int &num, vector<int> &GemInfo, vector<int> &outGem);
     int mP;
 
     int mTarget;
-    unordered_map<int, vector<int>> mCacheMap;
+    // unordered_map<int, vector<int>> mCacheMap;
+    map<int, map<int, long long>> cacheMap;
+    map<int, map<int, long long>> cacheIdxMap;
+    vector<string> mResThisTree;
 };

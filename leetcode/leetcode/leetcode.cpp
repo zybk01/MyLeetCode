@@ -49,16 +49,20 @@ int main()
 		mSolution.destroy(mHandle);
 	}
 	SolutiontreeOfInfiniteSouls sloutu;
+	// vector<int> gem({2,3});
+	// LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 100000007, 11391299));
 	// vector<int> gem({3,21,3});
 	// LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 7, 5));
+	vector<int> gem({300820,2133,137138,167957,100998});
+	LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 37, 7));
 	// vector<int> gem({636069358,43941083});
 	// LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 4421, 2509));
 	// vector<int> gem({87821,70624});
 	// LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 23178401, 8061209));
 	// vector<int> gem({764,22,24,379,220,515});
 	// LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 360117497, 223705638));
-	vector<int> gem({71,39,50});
-	LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 47, 1));
+	// vector<int> gem({71,39,50});
+	// LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 47, 1));
 	system("pause");
 	return 0;
 }
