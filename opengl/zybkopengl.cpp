@@ -464,6 +464,24 @@ cv::Mat visualize(const cv::Mat& image, const cv::Mat& faces, float fps = -1.f)
     return output_image;
 }
 
+void resize(cv::Mat scaleGrayMat, cv::Mat grayimage) {
+    float ratioCol = grayimage.cols / (float)scaleGrayMat.cols;
+    float ratioRow = grayimage.rows / (float)scaleGrayMat.rows;
+    for (int i = 0; i < scaleGrayMat.cols; i++) {
+        float srcX = (i + 0.5) * ratioCol - 0.5;
+        for (int j = 0; j < scaleGrayMat.rows; j ++) {
+            float srcY = (j + 0.5) * ratioRow - 0.5;
+            float u = 1.0 + srcX - round(srcX);
+            float v = 1.0 + srcY - round(srcY);
+            int srcI = int(ceil(srcX + 0.5)) - 1;
+            int srcJ = int(ceil(srcY + 0.5)) - 1;
+            srcI = srcI > (grayimage.cols - 2) ? grayimage.cols - 2 : srcI;
+            srcJ = srcJ > (grayimage.rows - 2) ? grayimage.rows - 2 : srcJ;
+            scaleGrayMat.data[j * scaleGrayMat.cols + i] = (1 - u) * (1 - v) * grayimage.at<uchar>(srcI, srcJ) + (1 - u) * (v)*grayimage.at<uchar>(srcI, srcJ + 1) + (u) * (1 - v) * grayimage.at<uchar>(srcI + 1, srcJ) + (u) * (v)*grayimage.at<uchar>(srcI + 1, srcJ + 1);
+        }
+    }
+}
+
 int opengl()
 {
     ZYBK_TRACE();
@@ -471,7 +489,7 @@ int opengl()
     cv::Mat simage;
     cv::Mat faces;
     cv::imshow("adad", image);
-    cv::resize(image, simage, cv::Size(128, 128));
+    cv::resize(image, simage, cv::Size(512, 512));
     cv::imshow("aaa", simage);
     cv::Mat scaleMat = (cv::Mat_<float>(2,2) << 3, 0, 0, 3);
     cv::Mat scaleMatInv = scaleMat.inv();
@@ -481,32 +499,12 @@ int opengl()
     image = simage;
     cv::cvtColor(image, grayimage, cv::COLOR_RGB2GRAY);
     cv::imshow("aa4a", grayimage);
-    cv::Mat scaleGrayMat = (cv::Mat_<uchar>(image.cols * 3, image.rows * 3));
-    // cv::Mat resMat(image.cols * 3, image.rows * 3);
-    std::shared_ptr<uchar> resImag = std::shared_ptr<uchar>(new uchar[image.cols * 3* image.rows * 3]);
-    int resCols = image.cols *3;
-    int resRows = image.rows *3;
+    cv::Mat scaleGrayMat = (cv::Mat_<uchar>(image.cols * 6, image.rows * 6));
     
     LOGD("opengl finished!!!");
-    for (int i = 0; i < resCols - 6; i++) {
-        for (int j = 0; j < resRows - 6; j ++) {
-            float srcX = (i + 0.5) * 0.3333 - 0.5;
-            float srcY = (j + 0.5) * 0.3333 - 0.5;
-            float u = 1.0 + srcX - round(srcX);
-            float v = 1.0 + srcY - round(srcY);
-            int srcI = int(ceil(srcX + 0.5)) - 1;
-            int srcJ = int(ceil(srcY + 0.5)) - 1;
-            srcI = srcI > (image.cols - 2) ? image.cols - 2 : srcI;
-            srcJ = srcJ > (image.rows - 2) ? image.rows - 2 : srcJ;
-            // LOGD("opengl finished!!! %d %d", srcI,srcJ);
-            // resImag.get()[j * resCols + i] = (1 - u) * (1 - v) * grayimage.at<uchar>(srcI, srcJ) + (1 - u) * (v)*grayimage.at<uchar>(srcI, srcJ + 1) + (u) * (1 - v) * grayimage.at<uchar>(srcI + 1, srcJ) + (u) * (v)*grayimage.at<uchar>(srcI + 1, srcJ + 1);
-            scaleGrayMat.data[j * resCols + i] = (1 - u) * (1 - v) * grayimage.at<uchar>(srcI, srcJ) + (1 - u) * (v)*grayimage.at<uchar>(srcI, srcJ + 1) + (u) * (1 - v) * grayimage.at<uchar>(srcI + 1, srcJ) + (u) * (v)*grayimage.at<uchar>(srcI + 1, srcJ + 1);
-        }
-    }
+    resize(scaleGrayMat, grayimage);
     LOGD("opengl finished!!!");
-    cv::namedWindow("a3aa",cv::WINDOW_AUTOSIZE);
-    cv::resizeWindow("a3aa",image.cols * 3, image.rows * 3);
-    cv::imshow("a3aa", scaleGrayMat);
+    cv::imshow("a3aa1212", scaleGrayMat);
     while (1)
     {
         cv::waitKey(0);
