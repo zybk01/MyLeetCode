@@ -15,6 +15,8 @@
 #include <iomanip>
 #include<set>
 
+    
+
 int main()
 {
 	ZYBK_TRACE();
@@ -49,9 +51,10 @@ int main()
 		mSolution.process(mHandle, str3, str4, result);
 		mSolution.destroy(mHandle);
 	}
-	SolutiontreeOfInfiniteSouls sloutu;
-	vector<int> gem({2,3});
-	LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 100000007, 11391299));
+	// LOGD("treeOfInfiniteSouls %d ",minSkips({2,4,4,9,10}, 3, 11));
+	// SolutiontreeOfInfiniteSouls sloutu;
+	// vector<int> gem({2,3});
+	// LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 100000007, 11391299));
 	// vector<int> gem({3,21,3});
 	// LOGD("treeOfInfiniteSouls %d ", sloutu.treeOfInfiniteSouls(gem, 7, 5));
 	// vector<int> gem({300820,2133,137138,167957,100998});
