@@ -21,7 +21,7 @@ include_directories("D:/Program Files (x86)/Coding/openCV/opencv/build/include/"
 include_directories(LIBRARY_OUTPUT_PATH)
 include_directories(./leetcode/leetcode)
 include_directories(./opengl)
-include_directories(./opengl)
+include_directories(./algorithms)
 
 
 if(0)
@@ -36,6 +36,7 @@ add_subdirectory(./config)
 add_subdirectory(./leetcode/leetcode)
 
 add_subdirectory(./opengl)
+add_subdirectory(./algorithms)
 
 link_libraries(zybk.util)
 link_libraries(zybk.opengl)

@@ -58,6 +58,8 @@ LONG WINAPI __declspec(dllexport) MyUnhandledExceptionFilter(struct _EXCEPTION_P
     TraceManager::GetInstance()->dumpTrace();
 
     LOG_DEBUG("ERROR!!!!!");
+    LOG_DEBUG("ExceptionInfo %p ExceptionAddress %p", ExceptionInfo, ExceptionInfo->ExceptionRecord->ExceptionAddress);
+    LOGD("ExceptionInfo %p ExceptionAddress %p", ExceptionInfo, ExceptionInfo->ExceptionRecord->ExceptionAddress);
     return EXCEPTION_EXECUTE_HANDLER;
 }
 void dumpTrace()
