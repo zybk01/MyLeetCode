@@ -30,6 +30,7 @@ class Base {
     ~Base() {
         LOGD("~Base");
     }
+    int a = 0;
 };
 class A
 {

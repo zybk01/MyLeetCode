@@ -10,5 +10,9 @@ link_libraries(zybk.util)
 link_libraries(glfw3.dll)
 link_libraries(libglad.a)
 link_libraries(libglfw3dll.a)
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS "-O0 -g")
+
 add_library(zybk.opengl  SHARED ./zybkopengl.cpp ./shader.cpp)
 message(${PROJECT_SOURCE_DIR})

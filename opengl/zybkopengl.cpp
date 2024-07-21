@@ -143,10 +143,10 @@ public:
         // 加载并生成纹理
         int width, height, nrChannels;
         stbi_set_flip_vertically_on_load(true);
-        unsigned char *data = stbi_load("resources/adwa.jpg", &width, &height, &nrChannels, 0);
+        unsigned char *data = stbi_load("resources/adwa.jpg", &mTextureW, &mTextureH, &nrChannels, 0);
         if (data)
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mTextureW, mTextureH, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(GL_TEXTURE_2D);
         }
         else
@@ -243,7 +243,7 @@ public:
                     mVertices[(indexJ * SCR_GRID_SIZE + indexI) * 5 + 4] -= textJ;
                     // mVertices[(5 * 10 + 5)*5 + 3] += mKeyInputMap[GLFW_KEY_LEFT] / 10.0;
                     // mVertices[(5 * 10 + 5)*5 + 4] += mKeyInputMap[GLFW_KEY_UP] / 10.0;
-                    // LOGD("offset x %f y %f",  mKeyInputMap[GLFW_KEY_LEFT] / 10.0, mKeyInputMap[GLFW_KEY_UP] / 10.0);
+                    LOGD("offset x %f y %f",  mKeyInputMap[GLFW_KEY_LEFT] / 10.0, mKeyInputMap[GLFW_KEY_UP] / 10.0);
                     LOGD("offset x %f y %f", textI, textJ);
                     mSelectedCursorPos.clear();
                 }
@@ -258,6 +258,7 @@ public:
             glBindVertexArray(mVAO);
             float timeValue = glfwGetTime();
             float greenValue = (sin(timeValue) / 2.0f) + 0.0f;
+            // float greenValue = 5;
             glm::vec3 cubePositions[] = {
                 glm::vec3(0.0f, 0.0f, 0.0f),
                 glm::vec3(2.0f, 5.0f, -15.0f),
@@ -292,6 +293,7 @@ public:
                 // trans = glm::rotate(trans, glm::radians(mCursorPos.x), glm::vec3(mKeyInputMap[GLFW_KEY_UP], mKeyInputMap[GLFW_KEY_LEFT], 0.0f));
 
                 glUniform4f(glGetUniformLocation(mpShader->ID, "inputD"), mKeyInputMap[GLFW_KEY_UP], mKeyInputMap[GLFW_KEY_LEFT], greenValue, 1);
+                glUniform4f(glGetUniformLocation(mpShader->ID, "textureDimen"), mTextureW, mTextureH, greenValue, 1);
                 // glUniform4f(glGetUniformLocation(mpShader->ID, "inputR"), mCursorPos.x, mCursorPos.y, 1, 1);
                 unsigned int transformLoc = glGetUniformLocation(mpShader->ID, "transform");
                 glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
@@ -415,6 +417,8 @@ private:
     unsigned int mVBO;
     unsigned int mEBO;
     unsigned int mTexture;
+    int mTextureW;
+    int mTextureH;
     unsigned int mIndices[SCR_BLOCK_SIZE * SCR_BLOCK_SIZE * 3 * 2];
     float mVertices[SCR_GRID_SIZE * SCR_GRID_SIZE * 5];
 };
@@ -485,31 +489,31 @@ void resize(cv::Mat scaleGrayMat, cv::Mat grayimage) {
 int opengl()
 {
     ZYBK_TRACE();
-    cv::Mat image = cv::imread("resources/adwa.jpg");
-    cv::Mat simage;
-    cv::Mat faces;
-    cv::imshow("adad", image);
-    cv::resize(image, simage, cv::Size(512, 512));
-    cv::imshow("aaa", simage);
-    cv::Mat scaleMat = (cv::Mat_<float>(2,2) << 3, 0, 0, 3);
-    cv::Mat scaleMatInv = scaleMat.inv();
-    LOGD("invMat %f %f %f %f", scaleMatInv.at<float>(0, 0), scaleMatInv.at<float>(0, 1), scaleMatInv.at<float>(1, 0), scaleMatInv.at<float>(1, 1));
-    cv::print(scaleMatInv);
-    cv::Mat grayimage;
-    image = simage;
-    cv::cvtColor(image, grayimage, cv::COLOR_RGB2GRAY);
-    cv::imshow("aa4a", grayimage);
-    cv::Mat scaleGrayMat = (cv::Mat_<uchar>(image.cols * 6, image.rows * 6));
+    // cv::Mat image = cv::imread("resources/adwa.jpg");
+    // cv::Mat simage;
+    // cv::Mat faces;
+    // cv::imshow("adad", image);
+    // cv::resize(image, simage, cv::Size(512, 512));
+    // cv::imshow("aaa", simage);
+    // cv::Mat scaleMat = (cv::Mat_<float>(2,2) << 3, 0, 0, 3);
+    // cv::Mat scaleMatInv = scaleMat.inv();
+    // LOGD("invMat %f %f %f %f", scaleMatInv.at<float>(0, 0), scaleMatInv.at<float>(0, 1), scaleMatInv.at<float>(1, 0), scaleMatInv.at<float>(1, 1));
+    // cv::print(scaleMatInv);
+    // cv::Mat grayimage;
+    // image = simage;
+    // cv::cvtColor(image, grayimage, cv::COLOR_RGB2GRAY);
+    // cv::imshow("aa4a", grayimage);
+    // cv::Mat scaleGrayMat = (cv::Mat_<uchar>(image.cols * 6, image.rows * 6));
     
-    LOGD("opengl finished!!!");
-    resize(scaleGrayMat, grayimage);
-    LOGD("opengl finished!!!");
-    cv::imshow("a3aa1212", scaleGrayMat);
-    while (1)
-    {
-        cv::waitKey(0);
-        /* code */
-    };
+    // LOGD("opengl finished!!!");
+    // resize(scaleGrayMat, grayimage);
+    // LOGD("opengl finished!!!");
+    // cv::imshow("a3aa1212", scaleGrayMat);
+    // while (1)
+    // {
+    //     cv::waitKey(0);
+    //     /* code */
+    // };
 
     // cv::Ptr<cv::FaceDetectorYN> facedetector = cv::FaceDetectorYN::create(modelPath, "", simage.size());
 
@@ -528,11 +532,11 @@ int opengl()
 
     // cv::imshow("aaaa", visualize(simage, faces));
 
-    // GLRenderprocessor processor;
-    // processor.setUpGlEnv();
-    // processor.prepareVertexArray();
-    // processor.prepareGlResource();
-    // processor.renderProcess();
+    GLRenderprocessor processor;
+    processor.setUpGlEnv();
+    processor.prepareVertexArray();
+    processor.prepareGlResource();
+    processor.renderProcess();
     LOGD("opengl finished!!!");
     return 0;
 }

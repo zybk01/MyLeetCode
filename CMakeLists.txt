@@ -12,6 +12,7 @@ set(OUTPATH ${PROJECT_SOURCE_DIR})
 set(LIBRARY_OUTPUT_PATH ${OUTPATH}/libs)
 set(EXECUTABLE_OUTPUT_PATH ${OUTPATH})
 set(EXECUTABLE_OUTPUT_PATH ${OUTPATH})
+
 link_directories(LIBRARY_OUTPUT_PATH)
 link_directories(./opengl/lib)
 # link_directories("D:/Program Files (x86)/Coding/openCV/build/bin")

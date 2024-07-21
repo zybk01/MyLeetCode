@@ -5,10 +5,10 @@ message("Enter Path: " ${PROJECT_SOURCE_DIR})
 
 set(LIBRARY_OUTPUT_PATH ${OUTPATH}/libs)
 set(EXECUTABLE_OUTPUT_PATH ${OUTPATH})
-link_libraries(dbghelp.dll)
+link_libraries(dbghelp.dll kernel32.dll)
 if(${BUILD_LOG})
 add_library(zybk.util  SHARED zybkLog.cpp zybkTrace.cpp ThreadPool.cpp)
-set(CMAKE_CXX_FLAGS "-O0")
+set(CMAKE_CXX_FLAGS "-O0 -g")
 endif(${BUILD_LOG})
 
 link_libraries(zybk.util)
