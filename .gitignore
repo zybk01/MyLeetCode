@@ -34,3 +34,9 @@
 *.exe
 *.out
 *.app
+
+#resources
+*.jpg
+*.JPG
+*.dump
+*.txt

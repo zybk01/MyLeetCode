@@ -38,6 +38,7 @@ add_subdirectory(./leetcode/leetcode)
 
 add_subdirectory(./opengl)
 add_subdirectory(./algorithms)
+add_subdirectory(./hack)
 
 link_libraries(zybk.util)
 link_libraries(zybk.opengl)
@@ -47,6 +48,7 @@ link_libraries(zybk.opengl)
 # link_libraries(SegFault)
 
 add_executable(VSCode main.cpp )
+
 # add_compile_definitions(DUMPPATH ${PROJECT_SOURCE_DIR})
 
 

@@ -147,7 +147,7 @@ int main(int num, char **args)
     // Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("FlannBased");
     detail::BestOf2NearestMatcher nmatcher = detail::BestOf2NearestMatcher();
     nmatcher(features, pairwise_matches_, matching_mask_);
-    detail::HomographyBasedEstimator estimator =  detail::HomographyBasedEstimator();
+    detail::HomographyBasedEstimator estimator = detail::HomographyBasedEstimator();
     std::vector<detail::CameraParams> cameras_;
     estimator(features, pairwise_matches_, cameras_);
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-HammingLUT");
@@ -157,7 +157,7 @@ int main(int num, char **args)
     std::sort(matches.begin(), matches.end());
 
     // Remove not so good matches Remove bad feature points
-    const int numGoodMatches = matches.size() * 0.6;
+    const int numGoodMatches = matches.size() * 0.4;
     matches.erase(matches.begin() + numGoodMatches, matches.end());
     cv::drawKeypoints(grayL, keypointsL, grayL);
     cv::drawKeypoints(grayR, keypointsR, grayR);
@@ -209,20 +209,20 @@ int main(int num, char **args)
     cv::Ptr<cv::Stitcher> stitcher = Stitcher::create(Stitcher::PANORAMA);
     auto status = stitcher->stitch(images, result);
     Ptr<WarperCreator> w = makePtr<SphericalWarper>();
-    
+
     Ptr<detail::RotationWarper> wR = w->create(1);
     {
         stitcher->estimateTransform(images);
-        
+
         Mat_<float> K;
         Mat R;
         stitcher->cameras()[0].R.convertTo(R, CV_32F);
         stitcher->cameras()[0].R = R;
         stitcher->cameras()[0].K().convertTo(K, CV_32F);
-        K(0,0) *= (float)2;
-        K(0,2) *= (float)2;
-        K(1,1) *= (float)2;
-        K(1,2) *= (float)2;
+        K(0, 0) *= (float)2;
+        K(0, 2) *= (float)2;
+        K(1, 1) *= (float)2;
+        K(1, 2) *= (float)2;
 
         wR->warp(grayL, K, stitcher->cameras()[0].R, INTER_LINEAR, BORDER_REFLECT, resultWarp);
     }
@@ -234,16 +234,17 @@ int main(int num, char **args)
     LOGD("status %d", status);
 
     // lapalacian blending
-    cv::Rect roi(gray32FL.cols / 3, gray32FL.rows / 1.5, gray32FL.cols / 2 , gray32FL.rows / 2); // 定义ROI的位置和大小
+    cv::Rect roi(gray32FL.cols / 3, gray32FL.rows / 1.5, gray32FL.cols /  15, gray32FL.rows / 15); // 定义ROI的位置和大小
     Mat Mask = imageL.clone();
-    Mask.setTo(cv::Scalar(0,0,0));
+    Mask.setTo(cv::Scalar(0, 0, 0));
     LOGD("status %d", status);
-    rectangle(Mask, roi, Scalar(1,1,1), FILLED);
+    rectangle(Mask, roi, Scalar(1, 1, 1), FILLED);
 
     // Mask(roi).setTo(cv::Scalar(1));
     LOGD("status %d", status);
 #define pyramidLayer 5
-    if (pyramidLayer >= 2) {
+    if (pyramidLayer >= 2)
+    {
         vector<Mat> pyramidL(pyramidLayer);
         vector<Mat> pyramidR(pyramidLayer);
         vector<Mat> pyramidMask(pyramidLayer);
@@ -257,36 +258,134 @@ int main(int num, char **args)
         buildPyramid(imageR, pyramidR, pyramidLayer);
         buildPyramid(Mask, pyramidMask, pyramidLayer);
         LOGD("status %d", status);
-        for (int i = 0; i < (pyramidLayer - 1); i++) {
+        for (int i = 0; i < (pyramidLayer - 1); i++)
+        {
             pyrUp(pyramidL[i + 1], LapPyramidL[i], pyramidL[i].size());
             LapPyramidL[i] = pyramidL[i] - LapPyramidL[i];
             pyrUp(pyramidR[i + 1], LapPyramidR[i], pyramidR[i].size());
             LapPyramidR[i] = pyramidR[i] - LapPyramidR[i];
         }
         LOGD("status %d %d", status, pyramidMask[0].type());
-        LapPyramidL[(pyramidLayer -1)] = pyramidL[(pyramidLayer -1)];
-        LapPyramidR[(pyramidLayer -1)] = pyramidR[(pyramidLayer -1)];
+        LapPyramidL[(pyramidLayer - 1)] = pyramidL[(pyramidLayer - 1)];
+        LapPyramidR[(pyramidLayer - 1)] = pyramidR[(pyramidLayer - 1)];
         vector<Mat> lapBlendResult(pyramidLayer);
-        for (int i = (pyramidLayer - 1); i >= 0; i--) {
-            Mat temp = LapPyramidL[i].mul(pyramidMask[i]) + LapPyramidR[i].mul((pyramidMask[i] * -1 + Scalar(1,1,1)));
+        for (int i = (pyramidLayer - 1); i >= 0; i--)
+        {
+            Mat temp = LapPyramidL[i].mul(pyramidMask[i]) + LapPyramidR[i].mul((pyramidMask[i] * -1 + Scalar(1, 1, 1)));
             lapBlendResult[i] = temp;
         }
         LOGD("status %d", status);
         cv::imshow("Mask", pyramidMask[0]);
         Mat blendResult = lapBlendResult[(pyramidLayer - 1)];
-        for (int i = (pyramidLayer - 2); i >= 0; i--) {
+        for (int i = (pyramidLayer - 2); i >= 0; i--)
+        {
             pyrUp(blendResult, blendResult, lapBlendResult[i].size());
             blendResult = lapBlendResult[i] + blendResult;
         }
         blendResult.convertTo(blendResult, CV_8UC3);
-        cv::imshow("blendResult", blendResult);
+        cv::imshow("laplacianblendResult", blendResult);
     }
-    Mat blendResult = imageL.mul(Mask) + imageR.mul((Mask * -1 + Scalar(1,1,1)));
+    {
+        Mat blendResult = imageL.clone();
+        Mat laplacianMat;
+
+        Laplacian(imageR, laplacianMat, CV_32FC3);
+        Mat MaskState = imageL.clone();
+        int cnt = 0;
+        map<pair<int, int>, int> idxMap;
+        MaskState.setTo(cv::Scalar(0, 0, 0));
+        for (int i = 0; i < Mask.rows; i++)
+        {
+            for (int j = 0; j < Mask.cols; j++)
+            {
+                if (Mask.at<Vec3f>(i, j)[0] == 1)
+                {
+                    if (i == 0 || j == Mask.cols - 1 || j == 0 || i == Mask.rows - 1)
+                    {
+                        // MaskState.at<Scalar>(i, j) = Scalar(1, 1, 1);
+                    }
+                    else if (Mask.at<Vec3f>(i + 1, j)[0] || Mask.at<Vec3f>(i, j + 1)[0] || Mask.at<Vec3f>(i - 1, j)[0] || Mask.at<Vec3f>(i, j - 1)[0])
+                    {
+                        idxMap[make_pair(i, j)] = cnt++;
+                    }
+                }
+            }
+        }
+        LOGD("cnt %d", cnt);
+        int dim[2] = {cnt, cnt};
+        Mat solveaMat(cnt, cnt, CV_32F);
+        // cv::SparseMat solveaMat(2, dim, CV_32FC3);
+        Mat solvelapcianMat(cnt, 1, CV_32FC3);
+        // solveaMat.setTo(0);
+        // solve()
+        for (auto &itr : idxMap)
+        {
+            int i = itr.first.first, j = itr.first.second;
+            // *solveaMat.ptr(itr.second, idxMap[make_pair(itr.second, itr.second)], true) = -4;
+            solveaMat.at<float>(itr.second, itr.second) = -4;
+            solvelapcianMat.at<Vec3f>(itr.second, 0) = laplacianMat.at<Vec3f>(i, j);
+            if (idxMap.count(make_pair(i + 1, j)))
+            {
+                // *solveaMat.ptr(itr.second, idxMap[make_pair(i + 1, j)], true) = 1;
+                solveaMat.at<float>(itr.second, idxMap[make_pair(i + 1, j)]) = 1;
+            }
+            else
+            {
+                solvelapcianMat.at<Vec3f>(itr.second, 0) -= imageL.at<Vec3f>(i + 1, j);
+            }
+            if (idxMap.count(make_pair(i - 1, j)))
+            {
+                // *solveaMat.ptr(itr.second, idxMap[make_pair(i - 1, j)], true) = 1;
+                solveaMat.at<float>(itr.second, idxMap[make_pair(i - 1, j)]) = 1;
+            }
+            else
+            {
+                solvelapcianMat.at<Vec3f>(itr.second, 0) -= imageL.at<Vec3f>(i + 1, j);
+            }
+            if (idxMap.count(make_pair(i, j + 1)))
+            {
+                // *solveaMat.ptr(itr.second, idxMap[make_pair(i, j + 1)], true) = 1;
+                solveaMat.at<float>(itr.second, idxMap[make_pair(i, j + 1)]) = 1;
+            }
+            else
+            {
+                solvelapcianMat.at<Vec3f>(itr.second, 0) -= imageL.at<Vec3f>(i + 1, j);
+            }
+            if (idxMap.count(make_pair(i, j - 1)))
+            {
+                // *solveaMat.ptr(itr.second, idxMap[make_pair(i, j - 1)], true) = 1;
+                solveaMat.at<float>(itr.second, idxMap[make_pair(i, j - 1)]) = 1;
+            }
+            else
+            {
+                solvelapcianMat.at<Vec3f>(itr.second, 0) -= imageL.at<Vec3f>(i + 1, j);
+            }
+        }
+        vector<Mat> result(3);
+        vector<Mat> solvelapcianMatVec;
+        split(solvelapcianMat, solvelapcianMatVec);
+        solve(solveaMat, solvelapcianMatVec[0], result[0]);
+        split(solvelapcianMat, solvelapcianMatVec);
+        solve(solveaMat, solvelapcianMatVec[1], result[1]);
+        split(solvelapcianMat, solvelapcianMatVec);
+        solve(solveaMat, solvelapcianMatVec[2], result[2]);
+        merge(result, result[0]);
+        // Mat result =  solveaMat.inv() * solvelapcianMat;
+        for (int i = 0; i < Mask.rows; i++)
+        {
+            for (int j = 0; j < Mask.cols; j++)
+            {
+                if (idxMap.count(make_pair(i, j))) {
+                    blendResult.at<Vec3f>(i, j) = result[0].at<Vec3f>(idxMap[make_pair(i, j)], 0);
+                }
+            }
+        }
+        blendResult.convertTo(blendResult, CV_8UC3);
+        cv::imshow("poissonblendResult", blendResult);
+    }
+    Mat blendResult = imageL.mul(Mask) + imageR.mul((Mask * -1 + Scalar(1, 1, 1)));
     blendResult.convertTo(blendResult, CV_8UC3);
     cv::imshow("blendResultCat", blendResult);
-
-
-
 
     while (1)
     {

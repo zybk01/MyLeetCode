@@ -96,4 +96,6 @@ public:
     TraceWrapper operator=(const TraceWrapper &) = delete;
 };
 
+string __declspec(dllexport)  getLastErrorFromCode();
+
 #endif

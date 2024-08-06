@@ -156,6 +156,7 @@ LONG WINAPI __declspec(dllexport) MyUnhandledExceptionFilter(struct _EXCEPTION_P
         // LOGD("SymGetSymFromAddr64 %s Name %s", pSym->Name, cleanName);
         // UnDecorateSymbolName(pSym->Name, cleanName, 1024, UNDNAME_COMPLETE);
     }
+    LOGD("ExceptionCode %x Rax %x ", ExceptionInfo->ExceptionRecord->ExceptionCode, ExceptionInfo->ContextRecord->Rax);
     LoadModule();
     IMAGEHLP_SYMBOL64 *pSym = (IMAGEHLP_SYMBOL64 *)malloc(sizeof(IMAGEHLP_SYMBOL64) + 1024);
     memset(pSym, 0, sizeof(IMAGEHLP_SYMBOL64) + 1024);
@@ -166,7 +167,6 @@ LONG WINAPI __declspec(dllexport) MyUnhandledExceptionFilter(struct _EXCEPTION_P
     memset(&Module, 0, sizeof(IMAGEHLP_MODULE64));
     Module.SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
     SymGetModuleInfo64(GetCurrentProcess(), ExceptionInfo->ContextRecord->Rip, &Module);
-    LOGD("ExceptionCode %x Rax %x ", ExceptionInfo->ExceptionRecord->ExceptionCode, ExceptionInfo->ContextRecord->Rax);
     LOGD("ExceptionInfo %p ExceptionAddress %p SymGetSymFromAddr64 %s Name %s base %p", ExceptionInfo, ExceptionInfo->ExceptionRecord->ExceptionAddress, pSym->Name, Module.ImageName, Module.BaseOfImage);
     LOG_DEBUG("ExceptionInfo %p ExceptionAddress %p SymGetSymFromAddr64 %s Name %s base %p", ExceptionInfo, ExceptionInfo->ExceptionRecord->ExceptionAddress, pSym->Name, Module.ImageName, Module.BaseOfImage);
     STACKFRAME64 stackFrame;
@@ -204,10 +204,11 @@ LONG WINAPI __declspec(dllexport) MyUnhandledExceptionFilter(struct _EXCEPTION_P
     }
     delete (pSym);
     char command[1024];
-    snprintf(command, sizeof(command), "addr2line -Cfe '%s' -i %p", Module.ImageName, ExceptionInfo->ExceptionRecord->ExceptionAddress);
+    snprintf(command, sizeof(command), "addr2line -Cfe %s -i %p", Module.ImageName, ExceptionInfo->ExceptionRecord->ExceptionAddress);
     LOGD("%s", command);
     system(command);
     // dumpMemoryRegion();
+    // ThreadPoolManager::CheckOut();
     return EXCEPTION_EXECUTE_HANDLER;
 }
 

@@ -29,7 +29,7 @@ int main(int num, char **args)
             {
                 if (strcmp(args[i], "-l") == 0)
                 {
-                    snprintf(input, sizeof(input), "%s", args[i]);
+                    snprintf(input, sizeof(input), "%s", args[i + 1]);
                     lImage = string(input);
                 }
                 else if (strcmp(args[i], "-c") == 0)
@@ -58,7 +58,7 @@ int main(int num, char **args)
     {
         /* code */
         imageL = cv::imread(lImage);
-        int resizeRatio = 4;
+        int resizeRatio = 1;
         cv::resize(imageL, imageL, cv::Size(imageL.cols / resizeRatio, imageL.rows / resizeRatio));
         LOGD("imageL w %d h %d", imageL.cols, imageL.rows);
     }
