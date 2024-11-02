@@ -58,6 +58,15 @@ static void drawOptFlowMap(const Mat &flow, Mat &cflowmap, int step,
         }
 }
 
+template <class T>
+T Interpolate(Point_<T> pos, Mat& mat)
+{
+    int p1r = floor(pos.y), p1c = floor(pos.x), p2r = floor(pos.y), p2c = floor(pos.x) + 1, p3r = floor(pos.y) + 1, p3c = floor(pos.x), p4r = floor(pos.y) + 1, p4c = floor(pos.x) + 1;
+    T value = (1 + (p1r - pos.y)) * (1 + (p1c - pos.x)) * (mat.at<T>(p1r, p1c)) + (1 + (p2r - pos.y)) * (1 - (p2c - pos.x)) * (mat.at<T>(p2r, p2c)) +
+              (1 - (p3r - pos.y)) * (1 + (p3c - pos.x)) * (mat.at<T>(p3r, p3c)) + (1 - (p4r - pos.y)) * (1 - (p4c - pos.x)) * (mat.at<T>(p4r, p4c));
+    return value;
+}
+
 int main(int num, char **args)
 {
     ZYBK_TRACE();
@@ -189,12 +198,12 @@ int main(int num, char **args)
         LOGD("size %d %d", pyramidDeltaT[i].cols, pyramidDeltaT[i].rows);
         // regionSize *= 2;
         // step *= 2;
-        regionSize = 5;
+        regionSize = 10;
         step = 15;
         Mat pyramidOffsetXClone = pyramidOffsetX[i].clone();
         Mat pyramidOffsetYClone = pyramidOffsetY[i].clone();
-        pyramidOffsetXClone = pyramidOffsetXClone * 0;
-        pyramidOffsetYClone = pyramidOffsetYClone * 0;
+        // pyramidOffsetXClone = pyramidOffsetXClone * 0;
+        // pyramidOffsetYClone = pyramidOffsetYClone * 0;
         for (int p = 0; p < points[0].rows; p += 1)
         {
             if (!((points[0].at<Point2f>(p).x < gray32FL.cols - regionSize - 2) && (points[0].at<Point2f>(p).x > regionSize + 1) && (points[0].at<Point2f>(p).y < gray32FL.rows - regionSize - 2) && (points[0].at<Point2f>(p).y > regionSize + 1)))
@@ -219,41 +228,31 @@ int main(int num, char **args)
                         continue;
                     }
 
-                    float newr = (r + offr + (pyramidOffsetY[i].at<float>(r + offr, c + offc))) > (pyramidOffsetY[i].rows - 2) ? (pyramidOffsetY[i].rows - 2) : (r + offr + (pyramidOffsetY[i].at<float>(r + offr, c + offc)));
+                    float newr = (r + offr + (Interpolate(Point_<float>(r + offr, c + offc), pyramidOffsetY[i]))) > (pyramidOffsetY[i].rows - 2) ? (pyramidOffsetY[i].rows - 2) : (r + offr + (Interpolate(Point_<float>(r + offr, c + offc), pyramidOffsetY[i])));
                     newr = newr > 0 ? newr : 0;
-                    float newc = (c + offc + (pyramidOffsetX[i].at<float>(r + offr, c + offc))) > (pyramidOffsetX[i].cols - 2) ? (pyramidOffsetX[i].cols - 2) : (c + offc + (pyramidOffsetX[i].at<float>(r + offr, c + offc)));
+                    float newc = (c + offc + (Interpolate(Point_<float>(r + offr, c + offc), pyramidOffsetX[i]))) > (pyramidOffsetX[i].cols - 2) ? (pyramidOffsetX[i].cols - 2) : (c + offc + (Interpolate(Point_<float>(r + offr, c + offc), pyramidOffsetX[i])));
                     newc = newc > 0 ? newc : 0;
                     int p1r = floor(newr), p1c = floor(newc), p2r = floor(newr), p2c = floor(newc) + 1, p3r = floor(newr) + 1, p3c = floor(newc), p4r = floor(newr) + 1, p4c = floor(newc) + 1;
                     int lp1r = floor(r + offr), lp1c = floor(c + offc), lp2r = floor(r + offr), lp2c = floor(c + offc) + 1, lp3r = floor(r + offr) + 1, lp3c = floor(c + offc), lp4r = floor(r + offr) + 1, lp4c = floor(c + offc) + 1;
-                    // float deltaX = (1 - (p1r - floor(newr))) * (1 - (p1c - floor(newc))) * (pyramidRX[i].at<float>(p1r, p1c) + pyramidLX[i].at<float>(r + offr, c + offc)) + (1 - (p2r - floor(newr))) * (1 - (p2c - floor(newc) - 1)) * (pyramidRX[i].at<float>(p2r, p2c) + pyramidLX[i].at<float>(r + offr, c + offc)) +
-                    //                (1 - (p3r - floor(newr) - 1)) * (1 - (p3c - floor(newc))) * (pyramidRX[i].at<float>(p3r, p3c) + pyramidLX[i].at<float>(r + offr, c + offc)) + (1 - (p4r - floor(newr) - 1)) * (1 - (p4c - floor(newc) - 1)) * (pyramidRX[i].at<float>(p4r, p4c) + pyramidLX[i].at<float>(r + offr, c + offc));
-                    // float deltaY = (1 - (p1r - floor(newr))) * (1 - (p1c - floor(newc))) * (pyramidRY[i].at<float>(p1r, p1c) + pyramidLY[i].at<float>(r + offr, c + offc)) + (1 - (p2r - floor(newr))) * (1 - (p2c - floor(newc) - 1)) * (pyramidRY[i].at<float>(p2r, p2c) + pyramidLY[i].at<float>(r + offr, c + offc)) +
-                    //                (1 - (p3r - floor(newr) - 1)) * (1 - (p3c - floor(newc))) * (pyramidRY[i].at<float>(p3r, p3c) + pyramidLY[i].at<float>(r + offr, c + offc)) + (1 - (p4r - floor(newr) - 1)) * (1 - (p4c - floor(newc) - 1)) * (pyramidRY[i].at<float>(p4r, p4c) + pyramidLY[i].at<float>(r + offr, c + offc));
-                    // float deltaX = (1 - (lp1r - floor(r + offr))) * (1 - (lp1c - floor(c + offc))) * (pyramidLX[i].at<float>(lp1r, lp1c) ) + (1 - (lp2r - floor(r + offr))) * (1 - (lp2c - floor(c + offc) - 1)) * (pyramidLX[i].at<float>(lp2r, lp2c)) +
-                    //                (1 - (lp3r - floor(r + offr) - 1)) * (1 - (lp3c - floor(c + offc))) * (pyramidLX[i].at<float>(lp3r, lp3c) ) + (1 - (lp4r - floor(r + offr) - 1)) * (1 - (lp4c - floor(c + offc) - 1)) * (pyramidLX[i].at<float>(lp4r, lp4c));
-                    // float deltaY = (1 - (lp1r - floor(r + offr))) * (1 - (lp1c - floor(c + offc))) * (pyramidLY[i].at<float>(lp1r, lp1c) ) + (1 - (lp2r - floor(r + offr))) * (1 - (lp2c - floor(c + offc) - 1)) * (pyramidLY[i].at<float>(lp2r, lp2c)) +
-                    //                (1 - (lp3r - floor(r + offr) - 1)) * (1 - (lp3c - floor(c + offc))) * (pyramidLY[i].at<float>(lp3r, lp3c)) + (1 - (lp4r - floor(r + offr) - 1)) * (1 - (lp4c - floor(c + offc) - 1)) * (pyramidLY[i].at<float>(lp4r, lp4c));
-                    float deltaX = pyramidLX[i].at<float>(r + offr, c + offc);
-                    float deltaY = pyramidLY[i].at<float>(r + offr, c + offc);
-                    float deltaT = (1 - (p1r - floor(newr))) * (1 - (p1c - floor(newc))) * (-pyramidRM[i].at<float>(p1r, p1c) ) + (1 - (p2r - floor(newr))) * (1 - (p2c - floor(newc) - 1)) * (-pyramidRM[i].at<float>(p2r, p2c) ) +
-                                   (1 - (p3r - floor(newr) - 1)) * (1 - (p3c - floor(newc))) * (-pyramidRM[i].at<float>(p3r, p3c)) + (1 - (p1r - floor(newr) - 1)) * (1 - (p1c - floor(newc) - 1)) * (-pyramidRM[i].at<float>(p4r, p4c));
-                    // deltaT      += (1 - (lp1r - floor(r + offr))) * (1 - (lp1c - floor(c + offc))) * (pyramidLM[i].at<float>(lp1r, lp1c) ) + (1 - (lp2r - floor(r + offr))) * (1 - (lp2c - floor(c + offc) - 1)) * (pyramidLM[i].at<float>(lp2r, lp2c) ) +
-                    //                (1 - (lp3r - floor(r + offr) - 1)) * (1 - (lp3c - floor(c + offc))) * (pyramidLM[i].at<float>(lp3r, lp3c)) + (1 - (lp1r - floor(r + offr) - 1)) * (1 - (lp1c - floor(c + offc) - 1)) * (pyramidLM[i].at<float>(lp4r, lp4c));
-                    deltaT = 0;
-                    deltaT = -pyramidRM[i].at<float>(r + offr, c + offc) + pyramidLM[i].at<float>(r + offr, c + offc);
-                    // deltaT += pyramidLM[i].at<float>(r + offr, c + offc);
+                    // float deltaX = pyramidLX[i].at<float>(r + offr, c + offc);
+                    // float deltaY = pyramidLY[i].at<float>(r + offr, c + offc);
+                    float deltaX = Interpolate(Point_<float>(r + offr, c + offc), pyramidLX[i]);
+                    float deltaY = Interpolate(Point_<float>(r + offr, c + offc), pyramidLY[i]);
+                    float deltaT = Interpolate(Point_<float>(r + offr, c + offc), pyramidLM[i]) - Interpolate(Point_<float>(newr, newc), pyramidRM[i]);         
+                    // deltaT = -pyramidRM[i].at<float>(r + offr, c + offc) + pyramidLM[i].at<float>(r + offr, c + offc);
                     A = A + (cv::Mat_<float>(2, 2) << deltaX * deltaX, deltaX * deltaY, deltaX * deltaY, deltaY * deltaY);
                     B = B + (cv::Mat_<float>(2, 1) << deltaX * deltaT, deltaY * deltaT);
                 }
             }
             Mat result = (cv::Mat_<float>(2, 1) << 0, 0);
             float D = A.at<float>(0, 0) * A.at<float>(1, 1) - A.at<float>(1, 0) * A.at<float>(0, 1);
-            if (D > 0.000001) {
+            if (D > 0.000001)
+            {
                 solve(A, B, result, DECOMP_QR);
             }
 
-            if (fabs(result.at<float>(0, 0)) > 0 || fabs(result.at<float>(1, 0)) >  0)
-                LOGD("result %f %f", result.at<float>(0, 0), result.at<float>(1, 0));
+            if (p < 5 && (fabs(result.at<float>(0, 0)) > 0 || fabs(result.at<float>(1, 0)) > 0))
+                LOGD("result %d : %f %f", p, result.at<float>(0, 0), result.at<float>(1, 0));
             for (int offr = -regionSize; offr <= regionSize; offr++)
             {
                 for (int offc = -regionSize; offc <= regionSize; offc++)
@@ -262,25 +261,25 @@ int main(int num, char **args)
                     {
                         continue;
                     }
-                    // pyramidOffsetXClone.at<float>(r + offr, c + offc) = pyramidOffsetX[i].at<float>(r + offr, c + offc) + result.at<float>(0, 0);
-                    // pyramidOffsetYClone.at<float>(r + offr, c + offc) = pyramidOffsetY[i].at<float>(r + offr, c + offc) + result.at<float>(1, 0);
-                    pyramidOffsetX[i].at<float>(r + offr, c + offc) = pyramidOffsetX[i].at<float>(r + offr, c + offc) + result.at<float>(0, 0);
-                    pyramidOffsetY[i].at<float>(r + offr, c + offc) = pyramidOffsetY[i].at<float>(r + offr, c + offc) + result.at<float>(1, 0);
+                    pyramidOffsetXClone.at<float>(r + offr, c + offc) = pyramidOffsetX[i].at<float>(r + offr, c + offc) + result.at<float>(0, 0);
+                    pyramidOffsetYClone.at<float>(r + offr, c + offc) = pyramidOffsetY[i].at<float>(r + offr, c + offc) + result.at<float>(1, 0);
+                    // pyramidOffsetX[i].at<float>(r + offr, c + offc) = pyramidOffsetX[i].at<float>(r + offr, c + offc) + result.at<float>(0, 0);
+                    // pyramidOffsetY[i].at<float>(r + offr, c + offc) = pyramidOffsetY[i].at<float>(r + offr, c + offc) + result.at<float>(1, 0);
                 }
             }
         }
-        // pyramidOffsetX[i] = pyramidOffsetXClone * 2;
-        // pyramidOffsetY[i] = pyramidOffsetYClone * 2;
-        pyramidOffsetX[i] = pyramidOffsetX[i] * 2;
-        pyramidOffsetY[i] = pyramidOffsetY[i] * 2;
+        pyramidOffsetX[i] = pyramidOffsetXClone * 2;
+        pyramidOffsetY[i] = pyramidOffsetYClone * 2;
+        // pyramidOffsetX[i] = pyramidOffsetX[i] * 2;
+        // pyramidOffsetY[i] = pyramidOffsetY[i] * 2;
 
         LOGD("print Process");
         cv::imshow("opticalFlow" + to_string(i), pyramidOffsetX[i]);
         pyramidL[i].convertTo(pyramidL[i], CV_8U);
         cv::imshow("pyramidlFlow" + to_string(i), pyramidL[i]);
     }
-    pyramidOffsetX[0] = pyramidOffsetX[0] / 2;
-    pyramidOffsetY[0] = pyramidOffsetY[0] / 2;
+    pyramidOffsetX[0] = pyramidOffsetX[0] * 2;
+    pyramidOffsetY[0] = pyramidOffsetY[0] * 2;
 
     LOGD("points[0].rows %d", points[0].rows);
     Mat resultME = imageL.clone();
@@ -292,7 +291,8 @@ int main(int num, char **args)
         dstx = dstx > 5 ? dstx : 5;
         dsty = dsty > (imageL.rows - 5) ? (imageL.rows - 5) : dsty;
         dsty = dsty > 5 ? dsty : 5;
-        if (fabs(pyramidOffsetX[0].at<float>((int)points[0].at<Point2f>(r).y, (int)points[0].at<Point2f>(r).x)) > 5 || fabs(pyramidOffsetY[0].at<float>((int)points[0].at<Point2f>(r).y, (int)points[0].at<Point2f>(r).x)) > 5 ) {
+        if (fabs(pyramidOffsetX[0].at<float>((int)points[0].at<Point2f>(r).y, (int)points[0].at<Point2f>(r).x)) > 5 || fabs(pyramidOffsetY[0].at<float>((int)points[0].at<Point2f>(r).y, (int)points[0].at<Point2f>(r).x)) > 5)
+        {
             LOGD("points[0].rows %d %d", dstx, dsty);
             arrowedLine(resultME, {(int)points[0].at<Point2f>(r).x, (int)points[0].at<Point2f>(r).y}, {dstx, dsty}, Scalar(255, 0, 0), 1);
         }
